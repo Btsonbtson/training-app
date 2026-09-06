@@ -1,0 +1,49 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f8f7f4;
+  --surface: #ffffff;
+  --surface-2: #f2f1ee;
+  --border: #e2e0da;
+  --border-strong: #c8c5bc;
+  --text: #1a1a18;
+  --text-secondary: #5c5a54;
+  --text-muted: #9c9a94;
+  --accent: #1D6FA5;
+  --accent-light: #e6f1fb;
+  --green: #16a34a;
+  --green-light: #dcfce7;
+  --amber: #b45309;
+  --amber-light: #fef3c7;
+  --purple: #7c3aed;
+  --purple-light: #f3e8ff;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111110;
+    --surface: #1c1c1a;
+    --surface-2: #242422;
+    --border: #2e2e2a;
+    --border-strong: #3e3e3a;
+    --text: #e8e6e0;
+    --text-secondary: #9c9a94;
+    --text-muted: #6c6a64;
+    --accent-light: #0c2d44;
+    --green-light: #052e16;
+    --amber-light: #2d1800;
+    --purple-light: #2d1f4e;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
