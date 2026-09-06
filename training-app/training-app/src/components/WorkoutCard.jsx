@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const BADGE_STYLE = {
   RI:  { background: 'var(--accent-light)', color: 'var(--accent)' },
@@ -36,6 +36,10 @@ function StarRating({ value, onChange }) {
 export function TreadmillCard({ workout, number, typelabel, stars, note, done, onStar, onSave }) {
   const [open, setOpen] = useState(false)
   const [localNote, setLocalNote] = useState(note || '')
+
+  useEffect(() => {
+    setLocalNote(note || '')
+  }, [note])
 
   return (
     <div style={cardStyle}>
@@ -78,6 +82,10 @@ export function BodyweightCard({ session, number, stars, note, done, onStar, onS
   const [open, setOpen] = useState(false)
   const [localNote, setLocalNote] = useState(note || '')
   const isBW = session.type === 'BW'
+
+  useEffect(() => {
+    setLocalNote(note || '')
+  }, [note])
 
   return (
     <div style={cardStyle}>
