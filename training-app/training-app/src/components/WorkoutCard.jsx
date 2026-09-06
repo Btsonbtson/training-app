@@ -43,7 +43,13 @@ export function TreadmillCard({ workout, number, typelabel, stars, note, done, o
 
   return (
     <div style={cardStyle}>
-      <div style={hdrStyle} onClick={() => setOpen(o => !o)}>
+      <div
+        role="button"
+        tabIndex={0}
+        style={hdrStyle}
+        onClick={() => setOpen(o => !o)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o) } }}
+      >
         <Num value={number} done={done} type="t" />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={titleStyle}>{typelabel} #{number}</div>
@@ -78,10 +84,12 @@ export function TreadmillCard({ workout, number, typelabel, stars, note, done, o
 
 // ── Bodyweight Card ───────────────────────────────────────
 
-export function BodyweightCard({ session, number, stars, note, done, onStar, onSave, illustrations }) {
+export function BodyweightCard({ session, number, stars, note, done, onStar, onSave, illustrations, thumb }) {
   const [open, setOpen] = useState(false)
   const [localNote, setLocalNote] = useState(note || '')
   const isBW = session.type === 'BW'
+  const exercise = session.exercises[0]
+  const fig = illustrations?.[exercise?.name]
 
   useEffect(() => {
     setLocalNote(note || '')
@@ -89,10 +97,21 @@ export function BodyweightCard({ session, number, stars, note, done, onStar, onS
 
   return (
     <div style={cardStyle}>
-      <div style={hdrStyle} onClick={() => setOpen(o => !o)}>
-        <Num value={number} done={done} type={isBW ? 't' : 'b'} />
+      <div
+        role="button"
+        tabIndex={0}
+        style={hdrStyle}
+        onClick={() => setOpen(o => !o)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o) } }}
+      >
+        <Num value={session.day || number} done={done} type={isBW ? 'b' : 't'} />
+        {thumb && (
+          <div style={{ width: 48, height: 48, flexShrink: 0, overflow: 'hidden', borderRadius: 8, border: '1px solid var(--border)' }}>
+            {thumb}
+          </div>
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={titleStyle}>{session.title}</div>
+          <div style={titleStyle}>Day {session.day || number} · {session.title}</div>
           <div style={subStyle}>{session.struct}</div>
         </div>
         <ChevronIcon open={open} />
@@ -100,33 +119,23 @@ export function BodyweightCard({ session, number, stars, note, done, onStar, onS
 
       {open && (
         <div style={bodyStyle}>
-          <Badge type={session.type} label={isBW ? 'Army Chair 28-Day' : 'Chair Tai Chi 28-Day'} />
-          <Badge type="HIIT" label="9' HIIT" style={{ marginLeft: 4 }} />
-
-          <div style={{ ...snoteStyle, marginTop: 8 }}>{session.struct}</div>
-
-          <div style={{ marginTop: 10 }}>
-            {session.exercises.map((ex, i) => {
-              const fig = illustrations?.[ex.name]
-              return (
-                <div key={i} style={exCardStyle}>
-                  <div style={exHdrStyle}>
-                    <span style={exNumStyle}>{i + 1}.</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={exNameStyle}>{ex.name}</div>
-                      <div style={exSetsStyle}>{ex.sets}</div>
-                      <div style={exDescStyle}>{ex.desc}</div>
-                    </div>
-                  </div>
-                  {fig && (
-                    <div style={exFigStyle}>{fig}</div>
-                  )}
-                </div>
-              )
-            })}
+          <div style={{ paddingTop: 10 }}>
+            <Badge type={session.type} label={isBW ? 'Army Chair 28-Day' : 'Chair Tai Chi 28-Day'} />
           </div>
 
-          <div style={{ ...snoteStyle, marginTop: 8 }}>💡 {session.note}</div>
+          {fig && (
+            <div style={{ ...exFigStyle, marginTop: 10, borderTop: 'none', borderRadius: 10, overflow: 'hidden', padding: 0 }}>
+              {fig}
+            </div>
+          )}
+
+          <div style={{ marginTop: 10 }}>
+            <div style={exNameStyle}>{exercise?.name}</div>
+            <div style={exSetsStyle}>{exercise?.sets}</div>
+            <div style={exDescStyle}>{exercise?.desc}</div>
+          </div>
+
+          {session.note && <div style={{ ...snoteStyle, marginTop: 8 }}>💡 {session.note}</div>}
 
           <Feedback stars={stars} note={localNote} onStar={onStar}
             onNoteChange={setLocalNote} onSave={() => onSave(localNote)} />

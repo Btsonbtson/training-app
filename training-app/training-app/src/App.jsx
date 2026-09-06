@@ -5,6 +5,7 @@ import { ILLUSTRATIONS } from './data/illustrations'
 import { TreadmillCard, BodyweightCard } from './components/WorkoutCard'
 import { ThemeToggle } from './components/ThemeToggle'
 import { HiitTimer } from './components/HiitTimer'
+import { PosterCell, ProgramPoster } from './components/PosterArt'
 import { useStorage } from './hooks/useStorage'
 
 function applyTheme(theme) {
@@ -104,16 +105,21 @@ export default function App() {
   const [bStars, setBStars] = useStorage('tp_bs', {})
   const [bNotes, setBNotes] = useStorage('tp_bn', {})
   const [bDone, setBDone] = useStorage('tp_bd', {})
+  const [bwProgram, setBwProgram] = useStorage('tp_bw_prog', 'tc')
 
   useEffect(() => {
     applyTheme(theme === 'light' || theme === 'dark' ? theme : 'system')
   }, [theme])
 
   const activeTab = tab === 'b' ? 'b' : 't'
+  const activeProgram = bwProgram === 'ac' ? 'ac' : 'tc'
+  const visiblePhases = bodyPhases.filter((phase) => phase.program === activeProgram)
   const totalT = treadPhases.reduce((acc, ph) => acc + ph.workouts.length, 0)
   const doneT = Object.values(tDone).filter(Boolean).length
   const totalB = bodyPhases.reduce((acc, ph) => acc + ph.workouts.length, 0)
   const doneB = Object.values(bDone).filter(Boolean).length
+  const visibleWorkouts = visiblePhases.flatMap((phase) => phase.workouts)
+  const visibleDone = visibleWorkouts.filter((workout) => bDone[workout.id]).length
   const totalAll = totalT + totalB
   const doneAll = doneT + doneB
   const progressPct = totalAll ? Math.round((doneAll / totalAll) * 100) : 0
@@ -216,13 +222,28 @@ export default function App() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
             <h2 style={{ fontSize: 16, fontWeight: 600 }}>Bodyweight · 9' HIIT</h2>
-            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{doneB} / {totalB}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{visibleDone} / {visibleWorkouts.length}</span>
           </div>
-          <ProgressBar done={doneB} total={totalB} color="var(--green)" />
+          <ProgressBar done={visibleDone} total={visibleWorkouts.length} color="var(--green)" />
           <HiitTimer />
-          {bodyPhases.map((ph) => (
-            <div key={ph.label}>
-              <PhaseLabel label={ph.label} />
+
+          <div style={{
+            display: 'flex',
+            gap: 4,
+            background: 'var(--surface-2)',
+            borderRadius: 'var(--radius)',
+            padding: 3,
+            marginBottom: '1rem',
+          }}>
+            <TabButton active={activeProgram === 'tc'} onClick={() => setBwProgram('tc')} label="Chair Tai Chi" />
+            <TabButton active={activeProgram === 'ac'} onClick={() => setBwProgram('ac')} label="Army Chair" />
+          </div>
+
+          <ProgramPoster program={activeProgram} />
+
+          {visiblePhases.map((ph) => (
+            <div key={`${ph.program}-${ph.label}`}>
+              <PhaseLabel label={`${ph.label} — ${ph.focus}`} />
               {ph.workouts.map((session) => {
                 bNum++
                 const n = bNum
@@ -235,6 +256,7 @@ export default function App() {
                     note={bNotes[session.id] || ''}
                     done={!!bDone[session.id]}
                     illustrations={ILLUSTRATIONS}
+                    thumb={<PosterCell program={session.program} day={session.day} label={session.title} compact />}
                     onStar={(val) => handleBStar(session.id, val)}
                     onSave={(note) => handleBSave(session.id, note)}
                   />
