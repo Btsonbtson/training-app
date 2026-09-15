@@ -1,4 +1,4 @@
-import { monthGrid, monthKey } from '../data/schedule'
+import { isDayDone, monthGrid, monthKey } from '../data/schedule'
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
@@ -12,7 +12,7 @@ function tone(day) {
   return { bg: 'var(--surface-2)', color: 'var(--text)' }
 }
 
-export function CalendarMonth({ dateKey, selected, todayKey, onSelect }) {
+export function CalendarMonth({ dateKey, selected, todayKey, onSelect, tDone = {}, bDone = {} }) {
   const yearMonth = monthKey(dateKey)
   const cells = monthGrid(yearMonth)
   const [year, month] = yearMonth.split('-').map(Number)
@@ -40,6 +40,7 @@ export function CalendarMonth({ dateKey, selected, todayKey, onSelect }) {
           const isSelected = cell.date === selected
           const isToday = cell.date === todayKey
           const number = Number(cell.date.slice(8, 10))
+          const done = isDayDone(cell.day, { tDone, bDone })
           return (
             <button
               key={cell.date}
@@ -57,9 +58,21 @@ export function CalendarMonth({ dateKey, selected, todayKey, onSelect }) {
                 fontWeight: isToday || isSelected ? 700 : 500,
                 fontFamily: 'inherit',
                 cursor: cell.scheduled ? 'pointer' : 'default',
+                position: 'relative',
               }}
             >
               {number}
+              {done && (
+                <span style={{
+                  position: 'absolute',
+                  right: 4,
+                  top: 4,
+                  width: 5,
+                  height: 5,
+                  borderRadius: 99,
+                  background: 'var(--green)',
+                }} />
+              )}
             </button>
           )
         })}

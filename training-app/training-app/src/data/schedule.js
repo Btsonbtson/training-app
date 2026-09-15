@@ -185,6 +185,21 @@ export function monthGrid(yearMonth) {
   return days
 }
 
+export function nextBodySession(dateKey, program) {
+  const wantArmy = program === 'ac'
+  const pick = (day) => (wantArmy ? day?.armyChair : day?.taiChi) || null
+  const today = getDay(dateKey)
+  const current = pick(today)
+  if (current) {
+    return { session: current, date: dateKey, isToday: true }
+  }
+  const upcoming = getSchedule().find((day) => day.date >= dateKey && pick(day))
+  if (upcoming) {
+    return { session: pick(upcoming), date: upcoming.date, isToday: upcoming.date === dateKey }
+  }
+  return null
+}
+
 export function primarySession(day) {
   if (!day || day.kind !== 'train') return null
   if (day.primary === 'treadmill') return { type: 'treadmill', workout: day.treadmill }

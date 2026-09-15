@@ -4,6 +4,7 @@ import {
   athensDateKey,
   formatDateLabel,
   getSchedule,
+  nextBodySession,
   weekStart,
 } from './data/schedule'
 import { TreadmillCard, BodyweightCard } from './components/WorkoutCard'
@@ -12,9 +13,17 @@ import { HiitTimer } from './components/HiitTimer'
 import { AccountBar } from './components/AccountBar'
 import { BandPanel } from './components/BandPanel'
 import { PlanPanel } from './components/PlanPanel'
+import { ProgressCharts } from './components/ProgressCharts'
 import { useStorage } from './hooks/useStorage'
 import { cleanMetrics, usedSessionIds } from './lib/band'
-import { progressFor, PROGRESS_RANGES } from './lib/progress'
+import {
+  completionStreak,
+  hrTrend,
+  progressFor,
+  PROGRESS_RANGES,
+  splitProgress,
+  weekActivity,
+} from './lib/progress'
 
 const ProgramPoster = lazy(() =>
   import('./components/PosterArt').then((mod) => ({ default: mod.ProgramPoster }))
@@ -41,6 +50,18 @@ function ProgressBar({ done, total, color }) {
       }} />
     </div>
   )
+}
+
+function findHiitFocus(schedule, program, focusId, todayKey) {
+  if (focusId) {
+    for (const day of schedule) {
+      const session = program === 'ac' ? day.armyChair : day.taiChi
+      if (session?.id === focusId) {
+        return { session, date: day.date, isToday: day.date === todayKey }
+      }
+    }
+  }
+  return nextBodySession(todayKey, program)
 }
 
 function PhaseLabel({ label }) {
@@ -72,26 +93,6 @@ function TabButton({ active, onClick, icon, label }) {
       {icon}
       {label}
     </button>
-  )
-}
-
-function Stat({ label, value }) {
-  return (
-    <div style={{
-      flex: 1,
-      minWidth: 0,
-      background: 'var(--surface-2)',
-      border: '1px solid var(--border)',
-      borderRadius: 'var(--radius)',
-      padding: '8px 10px',
-    }}>
-      <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-.02em', marginTop: 2 }}>
-        {value}
-      </div>
-    </div>
   )
 }
 
@@ -134,6 +135,7 @@ export default function App() {
   const [bNotes, setBNotes] = useStorage('tp_bn', {})
   const [bDone, setBDone] = useStorage('tp_bd', {})
   const [bwProgram, setBwProgram] = useStorage('tp_bw_prog', 'tc')
+  const [hiitFocusId, setHiitFocusId] = useState(null)
   const [band, setBand] = useStorage('tp_band', { lastSync: null, source: null, days: {} })
   const [tMetrics, setTMetrics] = useStorage('tp_tm', {})
 
@@ -150,7 +152,11 @@ export default function App() {
   const activeProgram = bwProgram === 'ac' ? 'ac' : 'tc'
   const doneMaps = { tDone, bDone }
   const progress = progressFor(range, selectedDate || todayKey, doneMaps)
-  const weekProgress = progressFor('week', todayKey, doneMaps)
+  const weekBars = weekActivity(todayKey, doneMaps)
+  const streak = completionStreak(todayKey, doneMaps)
+  const split = splitProgress(range, selectedDate || todayKey, doneMaps)
+  const hrPoints = hrTrend(schedule, tMetrics)
+  const hiitFocus = findHiitFocus(schedule, activeProgram, hiitFocusId, todayKey)
 
   const treadDays = schedule.filter((day) => day.treadmill)
   const bodyDays = schedule.filter((day) => (activeProgram === 'ac' ? day.armyChair : day.taiChi))
@@ -176,6 +182,15 @@ export default function App() {
   const handleBSave = (id, note) => {
     setBNotes((n) => ({ ...n, [id]: note }))
     if (bStars[id] > 0) setBDone((d) => ({ ...d, [id]: true }))
+  }
+
+  const handleStartHiit = (session) => {
+    setHiitFocusId(session.id)
+    setBwProgram(session.program === 'ac' ? 'ac' : 'tc')
+    setTab('b')
+    window.requestAnimationFrame(() => {
+      document.getElementById('hiit-timer')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   return (
@@ -210,15 +225,23 @@ export default function App() {
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-          <Stat label={`${range} progress`} value={`${progress.pct}%`} />
-          <Stat label="This week" value={`${weekProgress.done}/${weekProgress.total}`} />
-          <Stat label="Avg rating" value={averageRating(tStars, bStars)} />
-        </div>
-        <ProgressBar done={progress.done} total={progress.total} color="var(--accent)" />
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: -8 }}>
+        <ProgressCharts
+          progress={progress}
+          week={weekBars}
+          streak={streak}
+          split={split}
+          hrPoints={hrPoints}
+          notes={countNotes(tNotes) + countNotes(bNotes)}
+          todayKey={todayKey}
+          selected={selectedDate}
+          onSelectDate={(date) => {
+            setSelectedDate(date)
+            setTab('plan')
+          }}
+        />
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 }}>
           {progress.done} / {progress.total} sessions
-          {countNotes(tNotes) + countNotes(bNotes) ? ` · ${countNotes(tNotes) + countNotes(bNotes)} notes` : ''}
+          {averageRating(tStars, bStars) !== '—' ? ` · avg ${averageRating(tStars, bStars)}★` : ''}
         </div>
       </div>
 
@@ -313,7 +336,11 @@ export default function App() {
             <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{bodyDone} / {bodyDays.length}</span>
           </div>
           <ProgressBar done={bodyDone} total={bodyDays.length} color="var(--green)" />
-          <HiitTimer />
+          <HiitTimer
+            key={hiitFocus?.session?.id || 'empty'}
+            session={hiitFocus?.session}
+            dateLabel={hiitFocus ? `${hiitFocus.isToday ? 'Today' : formatDateLabel(hiitFocus.date)}` : ''}
+          />
 
           <div style={{
             display: 'flex',
@@ -348,6 +375,7 @@ export default function App() {
                     defaultOpen={day.date === todayKey}
                     onStar={(val) => handleBStar(session.id, val)}
                     onSave={(note) => handleBSave(session.id, note)}
+                    onStartHiit={() => handleStartHiit(session)}
                   />
                 )
               })}

@@ -33,25 +33,57 @@ function readBody(req) {
   })
 }
 
-async function sendWhatsApp({ phone, apikey, text }) {
-  const cleanPhone = String(phone || '').replace(/[^\d]/g, '')
-  const key = String(apikey || '').trim()
-  if (!cleanPhone || !key || !text) {
-    return { ok: false, error: 'Missing phone, API key, or message.' }
+function digits(phone) {
+  return String(phone || '').replace(/[^\d]/g, '')
+}
+
+function whatsappAddress(phone) {
+  const clean = digits(phone)
+  return clean ? `whatsapp:+${clean}` : ''
+}
+
+async function sendWhatsApp({ phone, text }) {
+  const sid = process.env.TWILIO_SID || process.env.TWILIO_ACCOUNT_SID
+  const token = process.env.TWILIO_TOKEN || process.env.TWILIO_AUTH_TOKEN
+  const from = process.env.TWILIO_FROM || 'whatsapp:+14155238886'
+  const to = whatsappAddress(phone)
+  if (!sid || !token) {
+    return { ok: false, error: 'Set TWILIO_SID and TWILIO_TOKEN in .env, then restart the app.' }
   }
-  const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(cleanPhone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(key)}`
-  const response = await fetch(url)
-  const body = await response.text()
-  return { ok: response.ok, status: response.status, body }
+  if (!to || !text) {
+    return { ok: false, error: 'Missing phone or message.' }
+  }
+
+  const response = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(sid)}/Messages.json`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        To: to,
+        From: from,
+        Body: text,
+      }),
+    },
+  )
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      error: payload.message || payload.error_message || 'Twilio rejected the message.',
+    }
+  }
+  return { ok: true, status: response.status, sid: payload.sid }
 }
 
 async function reminderTargets() {
   const targets = []
-  if (process.env.WHATSAPP_PHONE && process.env.CALLMEBOT_APIKEY) {
-    targets.push({
-      phone: process.env.WHATSAPP_PHONE,
-      apikey: process.env.CALLMEBOT_APIKEY,
-    })
+  if (process.env.WHATSAPP_PHONE) {
+    targets.push({ phone: process.env.WHATSAPP_PHONE })
   }
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
@@ -62,16 +94,16 @@ async function reminderTargets() {
     const { data } = await client.from('user_state').select('data')
     for (const row of data || []) {
       const reminder = row.data?.tp_reminders
-      if (reminder?.enabled && reminder.phone && reminder.apiKey) {
-        targets.push({ phone: reminder.phone, apikey: reminder.apiKey })
+      if (reminder?.enabled && reminder.phone) {
+        targets.push({ phone: reminder.phone })
       }
     }
   }
 
   const seen = new Set()
   return targets.filter((target) => {
-    const key = `${target.phone}:${target.apikey}`
-    if (seen.has(key)) return false
+    const key = digits(target.phone)
+    if (!key || seen.has(key)) return false
     seen.add(key)
     return true
   })
@@ -96,14 +128,12 @@ export default async function handler(req, res) {
   const url = new URL(req.url, 'http://localhost')
   const body = req.method === 'POST' ? await readBody(req) : {}
   const testPhone = body.phone || url.searchParams.get('phone')
-  const testKey = body.apikey || url.searchParams.get('apikey')
   const testText = body.text || url.searchParams.get('text')
   const force = url.searchParams.get('force') === '1' || body.force === true
 
-  if (testPhone && testKey) {
+  if (testPhone) {
     const result = await sendWhatsApp({
       phone: testPhone,
-      apikey: testKey,
       text: testText || whatsappMessage(getDay(athensDateKey())),
     })
     json(res, result.ok ? 200 : 502, result)
@@ -131,7 +161,7 @@ export default async function handler(req, res) {
 
   const targets = await reminderTargets()
   if (!targets.length) {
-    json(res, 200, { ok: false, error: 'Set WHATSAPP_PHONE and CALLMEBOT_APIKEY, or save reminders in the app with a service role key.' })
+    json(res, 200, { ok: false, error: 'Set WHATSAPP_PHONE or save a phone in Reminders.' })
     return
   }
 

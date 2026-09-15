@@ -170,7 +170,7 @@ export function TreadmillCard({ workout, number, typelabel, stars, note, metrics
 
 // ── Bodyweight Card ───────────────────────────────────────
 
-export function BodyweightCard({ session, number, stars, note, done, onStar, onSave, dateLabel, defaultOpen = false }) {
+export function BodyweightCard({ session, number, stars, note, done, onStar, onSave, dateLabel, defaultOpen = false, onStartHiit }) {
   const [open, setOpen] = useState(Boolean(defaultOpen))
   const [localNote, setLocalNote] = useState(note || '')
   const isBW = session.type === 'BW'
@@ -226,6 +226,31 @@ export function BodyweightCard({ session, number, stars, note, done, onStar, onS
           </div>
 
           {session.note && <div style={{ ...snoteStyle, marginTop: 8 }}>💡 {session.note}</div>}
+
+          {onStartHiit && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onStartHiit(session)
+              }}
+              style={{
+                marginTop: 10,
+                width: '100%',
+                padding: 8,
+                borderRadius: 'var(--radius)',
+                border: '1px solid var(--border-strong)',
+                background: 'var(--green-light)',
+                color: 'var(--green)',
+                fontSize: 13,
+                fontFamily: 'inherit',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Start 9' HIIT · {session.title}
+            </button>
+          )}
 
           <Feedback stars={stars} note={localNote} onStar={onStar}
             onNoteChange={setLocalNote} onSave={() => onSave(localNote)} />

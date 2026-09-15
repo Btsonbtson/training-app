@@ -163,3 +163,60 @@ export function getBodySession(program, ordinal) {
       : `Cycle ${cycle}. Same movement, a little more volume. Keep the form.`,
   }
 }
+
+export function isFlowSession(session) {
+  return /flow/i.test(session?.title || '') || /full round/i.test(session?.struct || '')
+}
+
+function weekWorkoutsFor(session) {
+  if (!session) return []
+  const phases = bodyPhases.filter((phase) => phase.program === session.program)
+  for (const phase of phases) {
+    if (phase.workouts.some((workout) => workout.day === session.day)) {
+      return phase.workouts
+    }
+  }
+  return []
+}
+
+function parseSetCount(text) {
+  const match = String(text || '').match(/(\d+)\s*sets/i)
+  return match ? Number(match[1]) : 0
+}
+
+function stationFrom(workout, round, cycle, extra = {}) {
+  const exercise = workout.exercises?.[0] || { name: workout.title, sets: workout.struct, desc: '' }
+  return {
+    round,
+    name: exercise.name || workout.title,
+    sets: densify(exercise.sets || workout.struct, cycle),
+    desc: exercise.desc || '',
+    program: workout.program,
+    day: workout.day,
+    note: workout.note || '',
+    ...extra,
+  }
+}
+
+export function hiitStationsFor(session) {
+  if (!session) return []
+  const cycle = session.cycle || 1
+
+  if (isFlowSession(session)) {
+    const week = weekWorkoutsFor(session).filter((workout) => !isFlowSession(workout))
+    return week.slice(0, 6).map((workout, index) => stationFrom(workout, index + 1, cycle, {
+      label: workout.title,
+    }))
+  }
+
+  const setCount = parseSetCount(session.struct)
+  return Array.from({ length: 6 }, (_, index) => {
+    const setNum = setCount >= 2 ? Math.min(setCount, Math.floor(index / Math.max(1, Math.round(6 / setCount))) + 1) : 0
+    return stationFrom(session, index + 1, cycle, {
+      label: session.title,
+      setLabel: setNum
+        ? `Set ${setNum} of ${setCount}`
+        : `Round ${index + 1} of 6`,
+    })
+  })
+}

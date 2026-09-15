@@ -16,7 +16,6 @@ export function ReminderSettings({ reminders, onChange, today }) {
   const [status, setStatus] = useState('')
   const enabled = Boolean(reminders?.enabled)
   const phone = reminders?.phone || ''
-  const apiKey = reminders?.apiKey || ''
 
   const update = (patch) => onChange({ ...reminders, ...patch })
 
@@ -27,26 +26,16 @@ export function ReminderSettings({ reminders, onChange, today }) {
       const response = await fetch('/api/remind', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone,
-          apikey: apiKey.trim(),
-          text,
-        }),
+        body: JSON.stringify({ phone, text }),
       })
       const payload = await response.json().catch(() => ({}))
       if (payload.ok) {
         setStatus('WhatsApp test sent. Check your phone.')
         return
       }
-      throw new Error(payload.error || 'Request failed')
-    } catch {
-      const params = new URLSearchParams({
-        phone: phone.replace(/[^\d]/g, ''),
-        apikey: apiKey.trim(),
-        text,
-      })
-      window.open(`https://api.callmebot.com/whatsapp.php?${params.toString()}`, '_blank', 'noopener,noreferrer')
-      setStatus('Opened CallMeBot to send the test message.')
+      setStatus(payload.error || 'Could not send. Join the Twilio WhatsApp sandbox first, then try again.')
+    } catch (error) {
+      setStatus(error.message || 'Could not reach the reminder server.')
     }
   }
 
@@ -60,9 +49,10 @@ export function ReminderSettings({ reminders, onChange, today }) {
     }}>
       <h3 style={{ fontSize: 14, fontWeight: 650 }}>Reminders · 06:00</h3>
       <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.5 }}>
-        Training days get a WhatsApp at 06:00 Greece time. Rest days are skipped.
-        Add CallMeBot on WhatsApp, send <strong>I allow callmebot to send me messages</strong>,
-        then paste the API key here.
+        Στέλνει WhatsApp μέσω Twilio. Πρώτα άνοιξε το WhatsApp, στείλε στο
+        {' '}<strong>+1 415 523 8886</strong> το <strong>join …</strong> code από το Twilio
+        (Messaging → Try it out → Send a WhatsApp message). Μετά βάλε το κινητό σου εδώ
+        (30 + αριθμός χωρίς το αρχικό 0) και πάτα test.
       </p>
 
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 13 }}>
@@ -82,18 +72,10 @@ export function ReminderSettings({ reminders, onChange, today }) {
         style={{ ...fieldStyle, marginTop: 4 }}
       />
 
-      <label style={{ display: 'block', marginTop: 10, fontSize: 12, fontWeight: 600 }}>CallMeBot API key</label>
-      <input
-        value={apiKey}
-        onChange={(event) => update({ apiKey: event.target.value })}
-        placeholder="123456"
-        style={{ ...fieldStyle, marginTop: 4 }}
-      />
-
       <button
         type="button"
         onClick={sendTest}
-        disabled={!phone || !apiKey}
+        disabled={!phone}
         style={{
           marginTop: 12,
           width: '100%',
@@ -104,7 +86,7 @@ export function ReminderSettings({ reminders, onChange, today }) {
           color: 'var(--text)',
           font: 'inherit',
           fontWeight: 600,
-          cursor: phone && apiKey ? 'pointer' : 'default',
+          cursor: phone ? 'pointer' : 'default',
         }}
       >
         Send test WhatsApp
