@@ -1,0 +1,13 @@
+{
+  "appId": "com.boikos.training",
+  "appName": "Training Program",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "HealthConnect": {
+      "privacyPolicyUrl": "https://training-app-jade-seven.vercel.app/privacy.html"
+    }
+  }
+}

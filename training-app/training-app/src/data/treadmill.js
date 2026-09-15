@@ -67,3 +67,55 @@ export const treadPhases = [
     ],
   },
 ]
+
+export const originalTreadWorkouts = treadPhases.flatMap((phase) => phase.workouts)
+
+const EXTRA_TREAD_TEMPLATES = [
+  { type: 'RI', reps: "8x1'", speed: 8.4, incline: '-', rest: "1', 5' easy" },
+  { type: 'RHR', reps: "4x2'", speed: 6.8, incline: '+3%', rest: "2', 5' easy" },
+  { type: 'REH', reps: '5k', speed: 8.2, incline: '+1%', rest: '-' },
+  { type: 'RI', reps: "6x2'", speed: 8.0, incline: '-', rest: "1.30', 5' easy" },
+  { type: 'RI', reps: "5x3'", speed: 8.1, incline: '-', rest: "1.30', 5' easy" },
+  { type: 'RHR', reps: "4x2.30'", speed: 6.6, incline: '+4%', rest: "2', 5' easy" },
+  { type: 'RE', reps: '6k', speed: 8.4, incline: '-', rest: '-' },
+  { type: 'RI', reps: "10x1'", speed: 8.6, incline: '-', rest: "1', 5' easy" },
+]
+
+function bumpSpeed(value, delta) {
+  const rounded = Math.round((Number(value) + delta) * 10) / 10
+  return rounded.toFixed(1)
+}
+
+export function treadmillByIndex(index, options = {}) {
+  const original = originalTreadWorkouts[index - 1]
+  let workout = original
+  if (!workout) {
+    const extraIndex = index - originalTreadWorkouts.length - 1
+    const template = EXTRA_TREAD_TEMPLATES[extraIndex % EXTRA_TREAD_TEMPLATES.length]
+    const wave = Math.floor(extraIndex / EXTRA_TREAD_TEMPLATES.length)
+    workout = {
+      id: `t${index}`,
+      type: template.type,
+      reps: template.reps,
+      speed: bumpSpeed(template.speed, wave * 0.2),
+      incline: template.incline,
+      rest: template.rest,
+    }
+  }
+  if (options.taper) {
+    const numeric = Number.parseFloat(String(workout.speed).replace(',', '.'))
+    if (!Number.isNaN(numeric)) {
+      workout = { ...workout, speed: bumpSpeed(numeric, -0.5) }
+    }
+  }
+  return workout
+}
+
+export function treadPhaseForIndex(index) {
+  let cursor = 0
+  for (const phase of treadPhases) {
+    cursor += phase.workouts.length
+    if (index <= cursor) return phase.label
+  }
+  return 'Φάση 6 — Διατήρηση'
+}

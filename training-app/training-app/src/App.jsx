@@ -1,12 +1,24 @@
-import { useEffect } from 'react'
-import { treadPhases, TREAD_TYPE_LABEL } from './data/treadmill'
-import { bodyPhases } from './data/bodyweight'
-import { ILLUSTRATIONS } from './data/illustrations'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { TREAD_TYPE_LABEL } from './data/treadmill'
+import {
+  athensDateKey,
+  formatDateLabel,
+  getSchedule,
+  weekStart,
+} from './data/schedule'
 import { TreadmillCard, BodyweightCard } from './components/WorkoutCard'
 import { ThemeToggle } from './components/ThemeToggle'
 import { HiitTimer } from './components/HiitTimer'
-import { PosterCell, ProgramPoster } from './components/PosterArt'
+import { AccountBar } from './components/AccountBar'
+import { BandPanel } from './components/BandPanel'
+import { PlanPanel } from './components/PlanPanel'
 import { useStorage } from './hooks/useStorage'
+import { cleanMetrics, usedSessionIds } from './lib/band'
+import { progressFor, PROGRESS_RANGES } from './lib/progress'
+
+const ProgramPoster = lazy(() =>
+  import('./components/PosterArt').then((mod) => ({ default: mod.ProgramPoster }))
+)
 
 function applyTheme(theme) {
   const root = document.documentElement
@@ -94,9 +106,25 @@ function averageRating(...starMaps) {
   return avg.toFixed(1)
 }
 
+function groupByWeek(days) {
+  const groups = []
+  for (const day of days) {
+    const key = weekStart(day.date)
+    const last = groups[groups.length - 1]
+    if (!last || last.key !== key) {
+      groups.push({ key, days: [day] })
+    } else {
+      last.days.push(day)
+    }
+  }
+  return groups
+}
+
 export default function App() {
-  const [tab, setTab] = useStorage('tp_tab', 't')
+  const [tab, setTab] = useStorage('tp_tab', 'plan')
   const [theme, setTheme] = useStorage('tp_theme', 'system')
+  const [progressRange, setProgressRange] = useStorage('tp_prog_range', 'week')
+  const [reminders, setReminders] = useStorage('tp_reminders', { enabled: false, phone: '', apiKey: '' })
 
   const [tStars, setTStars] = useStorage('tp_ts', {})
   const [tNotes, setTNotes] = useStorage('tp_tn', {})
@@ -106,35 +134,41 @@ export default function App() {
   const [bNotes, setBNotes] = useStorage('tp_bn', {})
   const [bDone, setBDone] = useStorage('tp_bd', {})
   const [bwProgram, setBwProgram] = useStorage('tp_bw_prog', 'tc')
+  const [band, setBand] = useStorage('tp_band', { lastSync: null, source: null, days: {} })
+  const [tMetrics, setTMetrics] = useStorage('tp_tm', {})
+
+  const todayKey = athensDateKey()
+  const [selectedDate, setSelectedDate] = useState(todayKey)
+  const schedule = useMemo(() => getSchedule(), [])
+  const range = progressRange === 'month' || progressRange === 'total' ? progressRange : 'week'
 
   useEffect(() => {
     applyTheme(theme === 'light' || theme === 'dark' ? theme : 'system')
   }, [theme])
 
-  const activeTab = tab === 'b' ? 'b' : 't'
+  const activeTab = tab === 'b' ? 'b' : tab === 'band' ? 'band' : tab === 't' ? 't' : 'plan'
   const activeProgram = bwProgram === 'ac' ? 'ac' : 'tc'
-  const visiblePhases = bodyPhases.filter((phase) => phase.program === activeProgram)
-  const totalT = treadPhases.reduce((acc, ph) => acc + ph.workouts.length, 0)
-  const doneT = Object.values(tDone).filter(Boolean).length
-  const totalB = bodyPhases.reduce((acc, ph) => acc + ph.workouts.length, 0)
-  const doneB = Object.values(bDone).filter(Boolean).length
-  const visibleWorkouts = visiblePhases.flatMap((phase) => phase.workouts)
-  const visibleDone = visibleWorkouts.filter((workout) => bDone[workout.id]).length
-  const totalAll = totalT + totalB
-  const doneAll = doneT + doneB
-  const progressPct = totalAll ? Math.round((doneAll / totalAll) * 100) : 0
+  const doneMaps = { tDone, bDone }
+  const progress = progressFor(range, selectedDate || todayKey, doneMaps)
+  const weekProgress = progressFor('week', todayKey, doneMaps)
 
-  let tNum = 0
+  const treadDays = schedule.filter((day) => day.treadmill)
+  const bodyDays = schedule.filter((day) => (activeProgram === 'ac' ? day.armyChair : day.taiChi))
+  const treadDone = treadDays.filter((day) => tDone[day.treadmill.id]).length
+  const bodyDone = bodyDays.filter((day) => {
+    const session = activeProgram === 'ac' ? day.armyChair : day.taiChi
+    return session && bDone[session.id]
+  }).length
+
   const handleTStar = (id, val) => {
     setTStars((s) => ({ ...s, [id]: val }))
     if (val > 0) setTDone((d) => ({ ...d, [id]: true }))
   }
-  const handleTSave = (id, note) => {
+  const handleTSave = (id, note, metrics) => {
     setTNotes((n) => ({ ...n, [id]: note }))
+    setTMetrics((current) => ({ ...current, [id]: cleanMetrics(metrics) }))
     if (tStars[id] > 0) setTDone((d) => ({ ...d, [id]: true }))
   }
-
-  let bNum = 0
   const handleBStar = (id, val) => {
     setBStars((s) => ({ ...s, [id]: val }))
     if (val > 0) setBDone((d) => ({ ...d, [id]: true }))
@@ -151,16 +185,40 @@ export default function App() {
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-.02em' }}>Training Program</h1>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
-              Treadmill · Chair Tai Chi · Army Chair HIIT
+              8 Sep – 31 Dec 2026 · Friday rest
             </p>
           </div>
           <ThemeToggle theme={theme === 'light' || theme === 'dark' ? theme : 'system'} onChange={setTheme} />
         </div>
+        <AccountBar />
 
-        <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
-          <Stat label="Progress" value={`${progressPct}%`} />
-          <Stat label="Saved notes" value={countNotes(tNotes) + countNotes(bNotes)} />
+        <div style={{
+          display: 'flex',
+          gap: 4,
+          background: 'var(--surface-2)',
+          borderRadius: 'var(--radius)',
+          padding: 3,
+          marginTop: 12,
+        }}>
+          {PROGRESS_RANGES.map((item) => (
+            <TabButton
+              key={item.id}
+              active={range === item.id}
+              onClick={() => setProgressRange(item.id)}
+              label={item.label}
+            />
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+          <Stat label={`${range} progress`} value={`${progress.pct}%`} />
+          <Stat label="This week" value={`${weekProgress.done}/${weekProgress.total}`} />
           <Stat label="Avg rating" value={averageRating(tStars, bStars)} />
+        </div>
+        <ProgressBar done={progress.done} total={progress.total} color="var(--accent)" />
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: -8 }}>
+          {progress.done} / {progress.total} sessions
+          {countNotes(tNotes) + countNotes(bNotes) ? ` · ${countNotes(tNotes) + countNotes(bNotes)} notes` : ''}
         </div>
       </div>
 
@@ -172,59 +230,89 @@ export default function App() {
         padding: 3,
         marginBottom: '1.25rem',
       }}>
+        <TabButton active={activeTab === 'plan'} onClick={() => setTab('plan')} label="Plan" />
         <TabButton
           active={activeTab === 't'}
           onClick={() => setTab('t')}
-          icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 4v7l3 3-3 3v3M6 20l3-3-3-3 3-3V4"/></svg>}
           label="Treadmill"
         />
         <TabButton
           active={activeTab === 'b'}
           onClick={() => setTab('b')}
-          icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v4l3 3"/></svg>}
           label="Bodyweight"
         />
+        <TabButton
+          active={activeTab === 'band'}
+          onClick={() => setTab('band')}
+          label="Band"
+        />
       </div>
+
+      {activeTab === 'plan' && (
+        <PlanPanel
+          selected={selectedDate}
+          todayKey={todayKey}
+          onSelect={setSelectedDate}
+          tDone={tDone}
+          bDone={bDone}
+          tStars={tStars}
+          bStars={bStars}
+          tNotes={tNotes}
+          bNotes={bNotes}
+          tMetrics={tMetrics}
+          usedSessionIds={usedSessionIds}
+          reminders={reminders}
+          onRemindersChange={setReminders}
+          onTStar={handleTStar}
+          onTSave={handleTSave}
+          onBStar={handleBStar}
+          onBSave={handleBSave}
+        />
+      )}
 
       {activeTab === 't' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
             <h2 style={{ fontSize: 16, fontWeight: 600 }}>Treadmill</h2>
-            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{doneT} / {totalT}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{treadDone} / {treadDays.length}</span>
           </div>
-          <ProgressBar done={doneT} total={totalT} color="var(--accent)" />
-          {treadPhases.map((ph) => (
-            <div key={ph.label}>
-              <PhaseLabel label={ph.label} />
-              {ph.workouts.map((w) => {
-                tNum++
-                const n = tNum
-                return (
-                  <TreadmillCard
-                    key={w.id}
-                    workout={w}
-                    number={n}
-                    typelabel={TREAD_TYPE_LABEL[w.type]}
-                    stars={tStars[w.id] || 0}
-                    note={tNotes[w.id] || ''}
-                    done={!!tDone[w.id]}
-                    onStar={(val) => handleTStar(w.id, val)}
-                    onSave={(note) => handleTSave(w.id, note)}
-                  />
-                )
-              })}
+          <ProgressBar done={treadDone} total={treadDays.length} color="var(--accent)" />
+          {groupByWeek(treadDays).map((group) => (
+            <div key={group.key}>
+              <PhaseLabel label={`${formatDateLabel(group.key)} week`} />
+              {group.days.map((day) => (
+                <TreadmillCard
+                  key={day.treadmill.id}
+                  workout={day.treadmill}
+                  number={day.treadmillIndex}
+                  typelabel={TREAD_TYPE_LABEL[day.treadmill.type]}
+                  stars={tStars[day.treadmill.id] || 0}
+                  note={tNotes[day.treadmill.id] || ''}
+                  metrics={tMetrics[day.treadmill.id]}
+                  usedSessionIds={usedSessionIds(tMetrics, day.treadmill.id)}
+                  done={!!tDone[day.treadmill.id]}
+                  dateLabel={formatDateLabel(day.date)}
+                  defaultOpen={day.date === todayKey}
+                  onStar={(val) => handleTStar(day.treadmill.id, val)}
+                  onSave={(note, metrics) => handleTSave(day.treadmill.id, note, metrics)}
+                />
+              ))}
             </div>
           ))}
         </div>
+      )}
+
+      {activeTab === 'band' && (
+        <BandPanel band={band} onChange={setBand} />
       )}
 
       {activeTab === 'b' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
             <h2 style={{ fontSize: 16, fontWeight: 600 }}>Bodyweight · 9' HIIT</h2>
-            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{visibleDone} / {visibleWorkouts.length}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{bodyDone} / {bodyDays.length}</span>
           </div>
-          <ProgressBar done={visibleDone} total={visibleWorkouts.length} color="var(--green)" />
+          <ProgressBar done={bodyDone} total={bodyDays.length} color="var(--green)" />
           <HiitTimer />
 
           <div style={{
@@ -239,24 +327,25 @@ export default function App() {
             <TabButton active={activeProgram === 'ac'} onClick={() => setBwProgram('ac')} label="Army Chair" />
           </div>
 
-          <ProgramPoster program={activeProgram} />
+          <Suspense fallback={null}>
+            <ProgramPoster program={activeProgram} />
+          </Suspense>
 
-          {visiblePhases.map((ph) => (
-            <div key={`${ph.program}-${ph.label}`}>
-              <PhaseLabel label={`${ph.label} — ${ph.focus}`} />
-              {ph.workouts.map((session) => {
-                bNum++
-                const n = bNum
+          {groupByWeek(bodyDays).map((group) => (
+            <div key={group.key}>
+              <PhaseLabel label={`${formatDateLabel(group.key)} week`} />
+              {group.days.map((day) => {
+                const session = activeProgram === 'ac' ? day.armyChair : day.taiChi
                 return (
                   <BodyweightCard
                     key={session.id}
                     session={session}
-                    number={n}
+                    number={session.day}
                     stars={bStars[session.id] || 0}
                     note={bNotes[session.id] || ''}
                     done={!!bDone[session.id]}
-                    illustrations={ILLUSTRATIONS}
-                    thumb={<PosterCell program={session.program} day={session.day} label={session.title} compact />}
+                    dateLabel={formatDateLabel(day.date)}
+                    defaultOpen={day.date === todayKey}
                     onStar={(val) => handleBStar(session.id, val)}
                     onSave={(note) => handleBSave(session.id, note)}
                   />

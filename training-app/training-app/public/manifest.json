@@ -1,0 +1,9 @@
+{
+  "name": "Training Program",
+  "short_name": "Training",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111110",
+  "theme_color": "#1D6FA5",
+  "lang": "el"
+}

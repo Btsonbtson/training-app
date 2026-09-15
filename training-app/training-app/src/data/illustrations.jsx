@@ -1,4 +1,4 @@
-import { PosterCell } from '../components/PosterArt'
+import ExerciseArt from '../components/ExerciseArt'
 import { bodyPhases } from './bodyweight'
 
 export const ILLUSTRATIONS = Object.fromEntries(
@@ -7,7 +7,7 @@ export const ILLUSTRATIONS = Object.fromEntries(
       const name = workout.exercises[0].name
       return [
         name,
-        <PosterCell
+        <ExerciseArt
           key={`${workout.program}-${workout.day}`}
           program={workout.program}
           day={workout.day}

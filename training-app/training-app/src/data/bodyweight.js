@@ -1,3 +1,11 @@
+function densify(text, cycle) {
+  if (cycle < 2 || typeof text !== 'string') return text
+  return text
+    .replaceAll('3 sets', `${2 + cycle} sets`)
+    .replaceAll('5 deep breaths', `${4 + cycle} deep breaths`)
+    .replaceAll('1 full round', `${cycle} full rounds`)
+}
+
 function day(program, type, n, name, sets, desc, note) {
   return {
     id: `${program}${n}`,
@@ -136,3 +144,22 @@ export const bodyPhases = [
     ],
   },
 ]
+
+export function getBodySession(program, ordinal) {
+  const list = bodyPhases.filter((phase) => phase.program === program).flatMap((phase) => phase.workouts)
+  if (!list.length) return null
+  const cycle = Math.floor((ordinal - 1) / list.length) + 1
+  const base = list[(ordinal - 1) % list.length]
+  const struct = densify(base.struct, cycle)
+  const exercise = base.exercises[0]
+  return {
+    ...base,
+    id: cycle === 1 ? base.id : `${program}-c${cycle}-${base.day}`,
+    cycle,
+    struct,
+    exercises: [{ ...exercise, sets: densify(exercise.sets, cycle) }],
+    note: cycle === 1
+      ? base.note
+      : `Cycle ${cycle}. Same movement, a little more volume. Keep the form.`,
+  }
+}

@@ -1,4 +1,8 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { cleanMetrics, hasMetrics } from '../lib/band'
+import { readLatestTreadmillFromBand } from '../lib/healthConnect'
+
+const ExerciseArt = lazy(() => import('./ExerciseArt'))
 
 const BADGE_STYLE = {
   RI:  { background: 'var(--accent-light)', color: 'var(--accent)' },
@@ -33,13 +37,20 @@ function StarRating({ value, onChange }) {
 
 // ── Treadmill Card ────────────────────────────────────────
 
-export function TreadmillCard({ workout, number, typelabel, stars, note, done, onStar, onSave }) {
-  const [open, setOpen] = useState(false)
+export function TreadmillCard({ workout, number, typelabel, stars, note, metrics, done, usedSessionIds = [], onStar, onSave, dateLabel, defaultOpen = false }) {
+  const [open, setOpen] = useState(Boolean(defaultOpen))
   const [localNote, setLocalNote] = useState(note || '')
+  const [localMetrics, setLocalMetrics] = useState(() => cleanMetrics(metrics))
+  const [pullMessage, setPullMessage] = useState('')
+  const [pulling, setPulling] = useState(false)
 
   useEffect(() => {
     setLocalNote(note || '')
   }, [note])
+
+  useEffect(() => {
+    setLocalMetrics(cleanMetrics(metrics))
+  }, [metrics?.hrAvg, metrics?.hrMax, metrics?.kcal, metrics?.vo2, metrics?.sessionId])
 
   return (
     <div style={cardStyle}>
@@ -53,7 +64,11 @@ export function TreadmillCard({ workout, number, typelabel, stars, note, done, o
         <Num value={number} done={done} type="t" />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={titleStyle}>{typelabel} #{number}</div>
-          <div style={subStyle}>{workout.reps} · {workout.speed} km/h</div>
+          <div style={subStyle}>
+            {dateLabel ? `${dateLabel} · ` : ''}
+            {workout.reps} · {workout.speed} km/h
+            {hasMetrics(metrics) ? ` · ${metrics.hrAvg || metrics.hrMax} bpm` : ''}
+          </div>
         </div>
         <ChevronIcon open={open} />
       </div>
@@ -74,8 +89,79 @@ export function TreadmillCard({ workout, number, typelabel, stars, note, done, o
               </div>
             ))}
           </div>
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6, fontWeight: 500 }}>
+              Από το Band
+            </div>
+            <button
+              type="button"
+              disabled={pulling}
+              onClick={async (event) => {
+                event.stopPropagation()
+                setPulling(true)
+                setPullMessage('')
+                try {
+                  const result = await readLatestTreadmillFromBand(usedSessionIds)
+                  if (!result.ok) {
+                    setPullMessage(pullError(result.reason))
+                    return
+                  }
+                  const next = cleanMetrics({ ...localMetrics, ...result.metrics })
+                  setLocalMetrics(next)
+                  onSave(localNote, next)
+                  setPullMessage('Πέρασαν HR / kcal / VO2 από το τελευταίο workout του Band.')
+                } catch {
+                  setPullMessage('Αποτυχία ανάγνωσης από Health Connect.')
+                } finally {
+                  setPulling(false)
+                }
+              }}
+              style={{
+                width: '100%',
+                marginBottom: 8,
+                padding: 8,
+                borderRadius: 'var(--radius)',
+                border: '1px solid var(--border-strong)',
+                background: 'var(--surface-2)',
+                color: 'var(--text)',
+                fontSize: 13,
+                fontFamily: 'inherit',
+                fontWeight: 600,
+                cursor: pulling ? 'default' : 'pointer',
+              }}
+            >
+              {pulling ? 'Ανάγνωση Band…' : 'Πάρε HR / kcal / VO2 από το Band'}
+            </button>
+            <div style={gridStyle}>
+              <MetricField
+                label="HR avg"
+                value={localMetrics.hrAvg ?? ''}
+                onChange={(value) => setLocalMetrics((prev) => ({ ...prev, hrAvg: value }))}
+              />
+              <MetricField
+                label="HR max"
+                value={localMetrics.hrMax ?? ''}
+                onChange={(value) => setLocalMetrics((prev) => ({ ...prev, hrMax: value }))}
+              />
+              <MetricField
+                label="kcal"
+                value={localMetrics.kcal ?? ''}
+                onChange={(value) => setLocalMetrics((prev) => ({ ...prev, kcal: value }))}
+              />
+              <MetricField
+                label="VO2"
+                value={localMetrics.vo2 ?? ''}
+                onChange={(value) => setLocalMetrics((prev) => ({ ...prev, vo2: value }))}
+              />
+            </div>
+            {pullMessage && (
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.4 }}>
+                {pullMessage}
+              </div>
+            )}
+          </div>
           <Feedback stars={stars} note={localNote} onStar={onStar}
-            onNoteChange={setLocalNote} onSave={() => onSave(localNote)} />
+            onNoteChange={setLocalNote} onSave={() => onSave(localNote, localMetrics)} />
         </div>
       )}
     </div>
@@ -84,12 +170,11 @@ export function TreadmillCard({ workout, number, typelabel, stars, note, done, o
 
 // ── Bodyweight Card ───────────────────────────────────────
 
-export function BodyweightCard({ session, number, stars, note, done, onStar, onSave, illustrations, thumb }) {
-  const [open, setOpen] = useState(false)
+export function BodyweightCard({ session, number, stars, note, done, onStar, onSave, dateLabel, defaultOpen = false }) {
+  const [open, setOpen] = useState(Boolean(defaultOpen))
   const [localNote, setLocalNote] = useState(note || '')
   const isBW = session.type === 'BW'
   const exercise = session.exercises[0]
-  const fig = illustrations?.[exercise?.name]
 
   useEffect(() => {
     setLocalNote(note || '')
@@ -105,14 +190,9 @@ export function BodyweightCard({ session, number, stars, note, done, onStar, onS
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o) } }}
       >
         <Num value={session.day || number} done={done} type={isBW ? 'b' : 't'} />
-        {thumb && (
-          <div style={{ width: 48, height: 48, flexShrink: 0, overflow: 'hidden', borderRadius: 8, border: '1px solid var(--border)' }}>
-            {thumb}
-          </div>
-        )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={titleStyle}>Day {session.day || number} · {session.title}</div>
-          <div style={subStyle}>{session.struct}</div>
+          <div style={subStyle}>{dateLabel ? `${dateLabel} · ` : ''}{session.struct}</div>
         </div>
         <ChevronIcon open={open} />
       </div>
@@ -120,12 +200,22 @@ export function BodyweightCard({ session, number, stars, note, done, onStar, onS
       {open && (
         <div style={bodyStyle}>
           <div style={{ paddingTop: 10 }}>
-            <Badge type={session.type} label={isBW ? 'Army Chair 28-Day' : 'Chair Tai Chi 28-Day'} />
+            <Badge type={session.type} label={isBW
+              ? `Army Chair${session.cycle > 1 ? ` · Cycle ${session.cycle}` : ''}`
+              : `Chair Tai Chi${session.cycle > 1 ? ` · Cycle ${session.cycle}` : ''}`} />
           </div>
 
-          {fig && (
-            <div style={{ ...exFigStyle, marginTop: 10, borderTop: 'none', borderRadius: 10, overflow: 'hidden', padding: 0 }}>
-              {fig}
+          {session.program && session.day && (
+            <div style={{
+              marginTop: 10,
+              borderRadius: 12,
+              overflow: 'hidden',
+              border: '1px solid var(--border)',
+              background: 'var(--surface-2)',
+            }}>
+              <Suspense fallback={<div style={{ aspectRatio: '1 / 1', background: 'var(--surface-2)' }} />}>
+                <ExerciseArt program={session.program} day={session.day} label={exercise?.name} />
+              </Suspense>
             </div>
           )}
 
@@ -170,6 +260,40 @@ function Badge({ type, label }) {
       padding: '2px 8px', borderRadius: 99, ...s }}>
       {label}
     </span>
+  )
+}
+
+function pullError(reason) {
+  if (reason === 'browser' || reason === 'missing-plugin') {
+    return 'Ο αυτόματος συγχρονισμός δουλεύει από την Android εφαρμογή, αφού το Mi Fitness γράψει στο Health Connect. Άνοιξε το Mi Fitness μετά το διάδρομο και μετά πάτα το κουμπί από το κινητό app.'
+  }
+  if (reason === 'not-installed') return 'Εγκατέστησε το Health Connect στο κινητό.'
+  if (reason === 'not-supported') return 'Το Health Connect δεν υποστηρίζεται σε αυτή τη συσκευή.'
+  if (reason === 'no-data') return 'Δεν βρέθηκε πρόσφατο workout με HR/kcal. Σύγχρονισε πρώτα το Band στο Mi Fitness και ξαναπροσπάθησε.'
+  return 'Δεν ήταν δυνατή η ανάγνωση από το Band.'
+}
+
+function MetricField({ label, value, onChange }) {
+  return (
+    <label style={cellStyle} onClick={(event) => event.stopPropagation()}>
+      <div style={lblStyle}>{label}</div>
+      <input
+        inputMode="numeric"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        style={{
+          width: '100%',
+          border: 'none',
+          background: 'transparent',
+          color: 'var(--text)',
+          fontSize: 12,
+          fontWeight: 600,
+          fontFamily: 'inherit',
+          outline: 'none',
+          padding: 0,
+        }}
+      />
+    </label>
   )
 }
 
