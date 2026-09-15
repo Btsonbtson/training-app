@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { TREAD_TYPE_LABEL } from '../data/treadmill'
 import {
   daysInWeek,
   formatDateLabel,
   getDay,
+  isDayDone,
   monthKey,
   PROGRAM_END,
   PROGRAM_START,
 } from '../data/schedule'
+import { hasMetrics } from '../lib/band'
 import { CalendarMonth } from './CalendarMonth'
 import { ReminderSettings } from './ReminderSettings'
 import { RestCard } from './RestCard'
@@ -46,6 +48,10 @@ export function PlanPanel({
   const day = getDay(selected) || getDay(todayKey)
   const week = useMemo(() => daysInWeek(selected || todayKey), [selected, todayKey])
 
+  useEffect(() => {
+    setMonth(monthKey(selected || todayKey))
+  }, [selected, todayKey])
+
   const startPlanHiit = (session) => {
     setPlanHiitId(session.id)
     window.requestAnimationFrame(() => {
@@ -78,10 +84,18 @@ export function PlanPanel({
           <p style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>
             {day.date === todayKey ? 'Today' : formatDateLabel(day.date)}
             {day.block?.label ? ` · ${day.block.label}` : ''}
+            {day.kind === 'train' ? (isDayDone(day, { tDone, bDone }) ? ' · Done' : ' · Planned') : ''}
           </p>
+          <DayLog
+            day={day}
+            tStars={tStars}
+            bStars={bStars}
+            tNotes={tNotes}
+            bNotes={bNotes}
+            tMetrics={tMetrics}
+          />
           <DayWorkouts
             day={day}
-            isToday={day.date === todayKey}
             tDone={tDone}
             bDone={bDone}
             tStars={tStars}
@@ -94,9 +108,11 @@ export function PlanPanel({
             onTSave={onTSave}
             onBStar={onBStar}
             onBSave={onBSave}
-            onStartHiit={startPlanHiit}
+            onStartHiit={day.date >= todayKey ? startPlanHiit : undefined}
           />
-          <DayHiit key={day.date} day={day} sessionId={planHiitId} onSessionId={setPlanHiitId} />
+          {day.date >= todayKey && (
+            <DayHiit key={day.date} day={day} sessionId={planHiitId} onSessionId={setPlanHiitId} />
+          )}
         </div>
       )}
 
@@ -148,7 +164,6 @@ export function PlanPanel({
 
 function DayWorkouts({
   day,
-  isToday,
   tDone,
   bDone,
   tStars,
@@ -164,11 +179,13 @@ function DayWorkouts({
   onStartHiit,
 }) {
   if (day.kind === 'rest') return <RestCard day={day} />
+  const open = true
 
   return (
     <>
       {day.treadmill && (
         <TreadmillCard
+          key={day.treadmill.id}
           workout={day.treadmill}
           number={day.trainingNumber}
           typelabel={TREAD_TYPE_LABEL[day.treadmill.type]}
@@ -178,40 +195,112 @@ function DayWorkouts({
           usedSessionIds={usedSessionIds(tMetrics, day.treadmill.id)}
           done={!!tDone[day.treadmill.id]}
           dateLabel={formatDateLabel(day.date)}
-          defaultOpen={isToday}
+          defaultOpen={open}
           onStar={(val) => onTStar(day.treadmill.id, val)}
           onSave={(note, metrics) => onTSave(day.treadmill.id, note, metrics)}
         />
       )}
       {day.taiChi && (
         <BodyweightCard
+          key={day.taiChi.id}
           session={day.taiChi}
           number={day.taiChi.day}
           stars={bStars[day.taiChi.id] || 0}
           note={bNotes[day.taiChi.id] || ''}
           done={!!bDone[day.taiChi.id]}
           dateLabel={formatDateLabel(day.date)}
-          defaultOpen={isToday && !day.treadmill}
+          defaultOpen={open}
           onStar={(val) => onBStar(day.taiChi.id, val)}
           onSave={(note) => onBSave(day.taiChi.id, note)}
-          onStartHiit={() => onStartHiit?.(day.taiChi)}
+          onStartHiit={onStartHiit ? () => onStartHiit(day.taiChi) : undefined}
         />
       )}
       {day.armyChair && (
         <BodyweightCard
+          key={day.armyChair.id}
           session={day.armyChair}
           number={day.armyChair.day}
           stars={bStars[day.armyChair.id] || 0}
           note={bNotes[day.armyChair.id] || ''}
           done={!!bDone[day.armyChair.id]}
           dateLabel={formatDateLabel(day.date)}
-          defaultOpen={false}
+          defaultOpen={open}
           onStar={(val) => onBStar(day.armyChair.id, val)}
           onSave={(note) => onBSave(day.armyChair.id, note)}
-          onStartHiit={() => onStartHiit?.(day.armyChair)}
+          onStartHiit={onStartHiit ? () => onStartHiit(day.armyChair) : undefined}
         />
       )}
     </>
+  )
+}
+
+function DayLog({ day, tStars, bStars, tNotes, bNotes, tMetrics }) {
+  if (!day || day.kind !== 'train') return null
+
+  const rows = []
+  if (day.treadmill) {
+    const metrics = tMetrics[day.treadmill.id]
+    const note = (tNotes[day.treadmill.id] || '').trim()
+    const stars = tStars[day.treadmill.id] || 0
+    if (hasMetrics(metrics) || note || stars) {
+      rows.push({
+        key: day.treadmill.id,
+        title: `${TREAD_TYPE_LABEL[day.treadmill.type]} #${day.trainingNumber}`,
+        stars,
+        note,
+        stats: [
+          metrics?.hrAvg ? `HR avg ${metrics.hrAvg}` : null,
+          metrics?.hrMax ? `HR max ${metrics.hrMax}` : null,
+          metrics?.kcal ? `${metrics.kcal} kcal` : null,
+          metrics?.vo2 ? `VO2 ${metrics.vo2}` : null,
+        ].filter(Boolean),
+      })
+    }
+  }
+  for (const session of [day.taiChi, day.armyChair].filter(Boolean)) {
+    const note = (bNotes[session.id] || '').trim()
+    const stars = bStars[session.id] || 0
+    if (note || stars) {
+      rows.push({
+        key: session.id,
+        title: session.title,
+        stars,
+        note,
+        stats: [session.struct],
+      })
+    }
+  }
+
+  if (!rows.length) return null
+
+  return (
+    <div style={{
+      background: 'var(--green-light)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)',
+      padding: '10px 12px',
+      marginBottom: 8,
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)', letterSpacing: '.04em', textTransform: 'uppercase', marginBottom: 6 }}>
+        Logged after training
+      </div>
+      {rows.map((row) => (
+        <div key={row.key} style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 650 }}>{row.title}</div>
+          {row.stars > 0 && (
+            <div style={{ fontSize: 12, marginTop: 2 }}>{'★'.repeat(row.stars)}{'☆'.repeat(5 - row.stars)}</div>
+          )}
+          {row.stats.length > 0 && (
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+              {row.stats.join(' · ')}
+            </div>
+          )}
+          {row.note && (
+            <div style={{ fontSize: 12, color: 'var(--text)', marginTop: 4, lineHeight: 1.45 }}>{row.note}</div>
+          )}
+        </div>
+      ))}
+    </div>
   )
 }
 

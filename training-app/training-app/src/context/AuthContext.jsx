@@ -6,6 +6,7 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [ready, setReady] = useState(!isCloudEnabled)
+  const [recovering, setRecovering] = useState(false)
 
   useEffect(() => {
     if (!supabase) {
@@ -30,7 +31,8 @@ export function AuthProvider({ children }) {
       .catch(() => finish(null))
       .finally(() => window.clearTimeout(timeout))
 
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data } = supabase.auth.onAuthStateChange((event, next) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true)
       finish(next)
     })
 
@@ -44,6 +46,15 @@ export function AuthProvider({ children }) {
     user: session?.user ?? null,
     signUp: (email, password) => supabase.auth.signUp({ email, password }),
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
+    resetPassword: (email) => supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    }),
+    updatePassword: async (password) => {
+      const result = await supabase.auth.updateUser({ password })
+      if (!result.error) setRecovering(false)
+      return result
+    },
+    recovering,
     signOut: async () => {
       try {
         localStorage.removeItem('tp_guest')
@@ -52,7 +63,7 @@ export function AuthProvider({ children }) {
       }
       if (supabase) await supabase.auth.signOut()
     },
-  }), [ready, session])
+  }), [ready, session, recovering])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

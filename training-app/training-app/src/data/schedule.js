@@ -216,16 +216,27 @@ export function isDayDone(day, { tDone = {}, bDone = {} } = {}) {
   return false
 }
 
+function trainingLine(day) {
+  if (day.treadmill) {
+    const taiChi = day.taiChi ? ` Μετά, Chair Tai Chi: ${day.taiChi.title}.` : ''
+    return `διάδρομος ${day.treadmill.type} ${day.treadmill.reps} @ ${day.treadmill.speed} km/h.${taiChi}`
+  }
+  const session = day.taiChi || day.armyChair
+  const program = day.taiChi ? 'Chair Tai Chi' : 'Army Chair'
+  return `${program} — ${session.title} (${session.struct}).`
+}
+
 export function whatsappMessage(day) {
   if (!day) return 'Δεν υπάρχει πρόγραμμα για σήμερα.'
   if (day.kind === 'rest') {
     return `Καλημέρα. Σήμερα ${formatDateLabel(day.date)} είναι rest day. Ξεκούραση, νερό, και ελαφρύ περπάτημα αν θες.`
   }
-  if (day.treadmill) {
-    const taiChi = day.taiChi ? ` Μετά, Chair Tai Chi: ${day.taiChi.title}.` : ''
-    return `Καλημέρα. Σήμερα προπόνηση #${day.trainingNumber}: διάδρομος ${day.treadmill.type} ${day.treadmill.reps} @ ${day.treadmill.speed} km/h.${taiChi} Καλή δύναμη.`
+  return `Καλημέρα. Σήμερα προπόνηση #${day.trainingNumber}: ${trainingLine(day)} Καλή δύναμη.`
+}
+
+export function whatsappMissedMessage(day) {
+  if (!day || day.kind !== 'train') {
+    return `Υπενθύμιση. Σήμερα ${day ? formatDateLabel(day.date) : ''} δεν έχει προπόνηση.`
   }
-  const session = day.taiChi || day.armyChair
-  const program = day.taiChi ? 'Chair Tai Chi' : 'Army Chair'
-  return `Καλημέρα. Σήμερα προπόνηση #${day.trainingNumber}: ${program} — ${session.title} (${session.struct}). Καλή δύναμη.`
+  return `Υπενθύμιση 22:00. Δεν έχεις σημειώσει την προπόνηση #${day.trainingNumber} σήμερα (${formatDateLabel(day.date)}): ${trainingLine(day)} Αν την έκανες, άνοιξε την εφαρμογή και σώσε τη. Αν όχι, ακόμα προλαβαίνεις.`
 }

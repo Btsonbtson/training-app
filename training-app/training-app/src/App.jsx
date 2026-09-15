@@ -8,35 +8,26 @@ import {
   weekStart,
 } from './data/schedule'
 import { TreadmillCard, BodyweightCard } from './components/WorkoutCard'
-import { ThemeToggle } from './components/ThemeToggle'
+import { ThemeToggle, applyTheme, resolveTheme } from './components/ThemeToggle'
 import { HiitTimer } from './components/HiitTimer'
 import { AccountBar } from './components/AccountBar'
 import { BandPanel } from './components/BandPanel'
 import { PlanPanel } from './components/PlanPanel'
 import { ProgressCharts } from './components/ProgressCharts'
 import { useStorage } from './hooks/useStorage'
-import { cleanMetrics, usedSessionIds } from './lib/band'
+import { cleanMetrics, hasMetrics, usedSessionIds } from './lib/band'
 import {
   completionStreak,
   hrTrend,
   progressFor,
   PROGRESS_RANGES,
+  rangeActivity,
   splitProgress,
-  weekActivity,
 } from './lib/progress'
 
 const ProgramPoster = lazy(() =>
   import('./components/PosterArt').then((mod) => ({ default: mod.ProgramPoster }))
 )
-
-function applyTheme(theme) {
-  const root = document.documentElement
-  if (theme === 'light' || theme === 'dark') {
-    root.setAttribute('data-theme', theme)
-  } else {
-    root.removeAttribute('data-theme')
-  }
-}
 
 function ProgressBar({ done, total, color }) {
   return (
@@ -145,14 +136,16 @@ export default function App() {
   const range = progressRange === 'month' || progressRange === 'total' ? progressRange : 'week'
 
   useEffect(() => {
-    applyTheme(theme === 'light' || theme === 'dark' ? theme : 'system')
-  }, [theme])
+    const resolved = resolveTheme(theme)
+    if (resolved !== theme) setTheme(resolved)
+    applyTheme(resolved)
+  }, [theme, setTheme])
 
   const activeTab = tab === 'b' ? 'b' : tab === 'band' ? 'band' : tab === 't' ? 't' : 'plan'
   const activeProgram = bwProgram === 'ac' ? 'ac' : 'tc'
   const doneMaps = { tDone, bDone }
   const progress = progressFor(range, selectedDate || todayKey, doneMaps)
-  const weekBars = weekActivity(todayKey, doneMaps)
+  const activityBars = rangeActivity(range, selectedDate || todayKey, doneMaps, todayKey)
   const streak = completionStreak(todayKey, doneMaps)
   const split = splitProgress(range, selectedDate || todayKey, doneMaps)
   const hrPoints = hrTrend(schedule, tMetrics)
@@ -171,9 +164,12 @@ export default function App() {
     if (val > 0) setTDone((d) => ({ ...d, [id]: true }))
   }
   const handleTSave = (id, note, metrics) => {
+    const cleaned = cleanMetrics(metrics)
     setTNotes((n) => ({ ...n, [id]: note }))
-    setTMetrics((current) => ({ ...current, [id]: cleanMetrics(metrics) }))
-    if (tStars[id] > 0) setTDone((d) => ({ ...d, [id]: true }))
+    setTMetrics((current) => ({ ...current, [id]: cleaned }))
+    if (tStars[id] > 0 || (note && note.trim()) || hasMetrics(cleaned)) {
+      setTDone((d) => ({ ...d, [id]: true }))
+    }
   }
   const handleBStar = (id, val) => {
     setBStars((s) => ({ ...s, [id]: val }))
@@ -181,7 +177,9 @@ export default function App() {
   }
   const handleBSave = (id, note) => {
     setBNotes((n) => ({ ...n, [id]: note }))
-    if (bStars[id] > 0) setBDone((d) => ({ ...d, [id]: true }))
+    if (bStars[id] > 0 || (note && note.trim())) {
+      setBDone((d) => ({ ...d, [id]: true }))
+    }
   }
 
   const handleStartHiit = (session) => {
@@ -203,7 +201,7 @@ export default function App() {
               8 Sep – 31 Dec 2026 · Friday rest
             </p>
           </div>
-          <ThemeToggle theme={theme === 'light' || theme === 'dark' ? theme : 'system'} onChange={setTheme} />
+          <ThemeToggle theme={theme} onChange={setTheme} />
         </div>
         <AccountBar />
 
@@ -227,12 +225,12 @@ export default function App() {
 
         <ProgressCharts
           progress={progress}
-          week={weekBars}
+          bars={activityBars}
+          range={range}
           streak={streak}
           split={split}
           hrPoints={hrPoints}
           notes={countNotes(tNotes) + countNotes(bNotes)}
-          todayKey={todayKey}
           selected={selectedDate}
           onSelectDate={(date) => {
             setSelectedDate(date)

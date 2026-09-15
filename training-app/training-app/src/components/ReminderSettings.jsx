@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { whatsappMessage } from '../data/schedule'
+import { whatsappMessage, whatsappMissedMessage } from '../data/schedule'
 
 const fieldStyle = {
   width: '100%',
@@ -19,18 +19,20 @@ export function ReminderSettings({ reminders, onChange, today }) {
 
   const update = (patch) => onChange({ ...reminders, ...patch })
 
-  const sendTest = async () => {
+  const sendTest = async (kind) => {
     setStatus('')
-    const text = whatsappMessage(today)
+    const text = kind === 'missed' ? whatsappMissedMessage(today) : whatsappMessage(today)
     try {
       const response = await fetch('/api/remind', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, text }),
+        body: JSON.stringify({ phone, text, kind }),
       })
       const payload = await response.json().catch(() => ({}))
       if (payload.ok) {
-        setStatus('WhatsApp test sent. Check your phone.')
+        setStatus(kind === 'missed'
+          ? '22:00 missed-training WhatsApp sent. Check your phone.'
+          : '06:00 WhatsApp test sent. Check your phone.')
         return
       }
       setStatus(payload.error || 'Could not send. Join the Twilio WhatsApp sandbox first, then try again.')
@@ -47,12 +49,14 @@ export function ReminderSettings({ reminders, onChange, today }) {
       padding: 14,
       marginTop: 8,
     }}>
-      <h3 style={{ fontSize: 14, fontWeight: 650 }}>Reminders · 06:00</h3>
+      <h3 style={{ fontSize: 14, fontWeight: 650 }}>Reminders · 06:00 & 22:00</h3>
       <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.5 }}>
-        Στέλνει WhatsApp μέσω Twilio. Πρώτα άνοιξε το WhatsApp, στείλε στο
+        Στέλνει WhatsApp μέσω Twilio, ώρα Ελλάδας. 06:00 το πρωί της προπόνησης,
+        και 22:00 αν δεν την έχεις σημειώσει ως done. Πρώτα άνοιξε το WhatsApp, στείλε στο
         {' '}<strong>+1 415 523 8886</strong> το <strong>join …</strong> code από το Twilio
         (Messaging → Try it out → Send a WhatsApp message). Μετά βάλε το κινητό σου εδώ
-        (30 + αριθμός χωρίς το αρχικό 0) και πάτα test.
+        (30 + αριθμός χωρίς το αρχικό 0) και πάτα test. Για το 22:00, κάνε Sign in
+        ώστε ο server να βλέπει αν την έκανες.
       </p>
 
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 13 }}>
@@ -61,7 +65,7 @@ export function ReminderSettings({ reminders, onChange, today }) {
           checked={enabled}
           onChange={(event) => update({ enabled: event.target.checked })}
         />
-        Send WhatsApp on training days
+        Send WhatsApp at 06:00, and at 22:00 if not done
       </label>
 
       <label style={{ display: 'block', marginTop: 10, fontSize: 12, fontWeight: 600 }}>Phone (with country code)</label>
@@ -74,7 +78,7 @@ export function ReminderSettings({ reminders, onChange, today }) {
 
       <button
         type="button"
-        onClick={sendTest}
+        onClick={() => sendTest('morning')}
         disabled={!phone}
         style={{
           marginTop: 12,
@@ -89,7 +93,26 @@ export function ReminderSettings({ reminders, onChange, today }) {
           cursor: phone ? 'pointer' : 'default',
         }}
       >
-        Send test WhatsApp
+        Send 06:00 test
+      </button>
+      <button
+        type="button"
+        onClick={() => sendTest('missed')}
+        disabled={!phone}
+        style={{
+          marginTop: 8,
+          width: '100%',
+          padding: 9,
+          borderRadius: 'var(--radius)',
+          border: '1px solid var(--border-strong)',
+          background: 'var(--surface-2)',
+          color: 'var(--text)',
+          font: 'inherit',
+          fontWeight: 600,
+          cursor: phone ? 'pointer' : 'default',
+        }}
+      >
+        Send 22:00 missed test
       </button>
       {status && (
         <p style={{ marginTop: 8, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>{status}</p>

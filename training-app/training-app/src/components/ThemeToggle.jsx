@@ -1,50 +1,39 @@
-const OPTIONS = [
-  { id: 'system', label: 'System' },
-  { id: 'light', label: 'Light' },
-  { id: 'dark', label: 'Dark' },
-]
+export function resolveTheme(value) {
+  if (value === 'dark' || value === 'light') return value
+  if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark'
+  }
+  return 'light'
+}
+
+export function applyTheme(theme) {
+  const resolved = resolveTheme(theme)
+  document.documentElement.setAttribute('data-theme', resolved)
+  return resolved
+}
 
 export function ThemeToggle({ theme, onChange }) {
+  const current = resolveTheme(theme)
+  const next = current === 'dark' ? 'light' : 'dark'
   return (
-    <div
-      role="radiogroup"
-      aria-label="Theme"
+    <button
+      type="button"
+      onClick={() => onChange(next)}
+      aria-label={`Switch to ${next} theme`}
       style={{
-        display: 'inline-flex',
-        gap: 2,
-        background: 'var(--surface-2)',
-        borderRadius: 8,
-        padding: 2,
         border: '1px solid var(--border)',
+        background: 'var(--surface-2)',
+        color: 'var(--text)',
+        borderRadius: 8,
+        padding: '4px 10px',
+        fontSize: 11,
+        fontWeight: 600,
+        fontFamily: 'inherit',
+        cursor: 'pointer',
+        lineHeight: 1.3,
       }}
     >
-      {OPTIONS.map((option) => {
-        const active = theme === option.id
-        return (
-          <button
-            key={option.id}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            onClick={() => onChange(option.id)}
-            style={{
-              border: 'none',
-              background: active ? 'var(--surface)' : 'transparent',
-              color: active ? 'var(--text)' : 'var(--text-secondary)',
-              boxShadow: active ? 'var(--shadow)' : 'none',
-              borderRadius: 6,
-              padding: '4px 8px',
-              fontSize: 11,
-              fontWeight: 600,
-              fontFamily: 'inherit',
-              cursor: 'pointer',
-              lineHeight: 1.3,
-            }}
-          >
-            {option.label}
-          </button>
-        )
-      })}
-    </div>
+      {next === 'light' ? 'Light' : 'Dark'}
+    </button>
   )
 }

@@ -2,14 +2,12 @@ import { isDayDone, monthGrid, monthKey } from '../data/schedule'
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
-function tone(day) {
-  if (!day || !day.inMonth) return { bg: 'transparent', color: 'var(--text-muted)' }
-  if (!day.scheduled) return { bg: 'transparent', color: 'var(--text-muted)' }
-  if (day.day?.kind === 'rest') return { bg: 'var(--surface-2)', color: 'var(--text-secondary)' }
-  if (day.day?.primary === 'treadmill') return { bg: 'var(--accent-light)', color: 'var(--accent)' }
-  if (day.day?.primary === 'tai-chi') return { bg: '#e0f2fe', color: '#0369a1' }
-  if (day.day?.primary === 'army-chair') return { bg: 'var(--green-light)', color: 'var(--green)' }
-  return { bg: 'var(--surface-2)', color: 'var(--text)' }
+function tone(cell, done) {
+  if (!cell || !cell.inMonth) return { bg: 'transparent', color: 'var(--text-muted)' }
+  if (!cell.scheduled) return { bg: 'transparent', color: 'var(--text-muted)' }
+  if (cell.day?.kind === 'rest') return { bg: 'var(--surface-2)', color: 'var(--text-secondary)' }
+  if (done) return { bg: 'var(--green-light)', color: 'var(--green)' }
+  return { bg: 'var(--accent-light)', color: 'var(--accent)' }
 }
 
 export function CalendarMonth({ dateKey, selected, todayKey, onSelect, tDone = {}, bDone = {} }) {
@@ -36,17 +34,26 @@ export function CalendarMonth({ dateKey, selected, todayKey, onSelect, tDone = {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
         {cells.map((cell) => {
-          const colors = tone(cell)
+          const done = isDayDone(cell.day, { tDone, bDone })
+          const colors = tone(cell, done)
           const isSelected = cell.date === selected
           const isToday = cell.date === todayKey
           const number = Number(cell.date.slice(8, 10))
-          const done = isDayDone(cell.day, { tDone, bDone })
           return (
             <button
               key={cell.date}
               type="button"
               disabled={!cell.scheduled}
               onClick={() => cell.scheduled && onSelect(cell.date)}
+              aria-label={
+                !cell.scheduled
+                  ? cell.date
+                  : cell.day?.kind === 'rest'
+                    ? `${cell.date} rest`
+                    : done
+                      ? `${cell.date} training done`
+                      : `${cell.date} training planned`
+              }
               style={{
                 height: 36,
                 borderRadius: 8,
@@ -55,32 +62,20 @@ export function CalendarMonth({ dateKey, selected, todayKey, onSelect, tDone = {
                 color: cell.inMonth ? colors.color : 'var(--text-muted)',
                 opacity: cell.inMonth ? 1 : 0.4,
                 fontSize: 12,
-                fontWeight: isToday || isSelected ? 700 : 500,
+                fontWeight: isToday || isSelected || done ? 700 : 500,
                 fontFamily: 'inherit',
                 cursor: cell.scheduled ? 'pointer' : 'default',
-                position: 'relative',
               }}
             >
               {number}
-              {done && (
-                <span style={{
-                  position: 'absolute',
-                  right: 4,
-                  top: 4,
-                  width: 5,
-                  height: 5,
-                  borderRadius: 99,
-                  background: 'var(--green)',
-                }} />
-              )}
             </button>
           )
         })}
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 10, fontSize: 10, color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
-        <Legend color="var(--accent-light)" label="Treadmill + Tai Chi" />
-        <Legend color="var(--green-light)" label="Army Chair" />
-        <Legend color="var(--surface-2)" label="Friday rest" />
+        <Legend color="var(--green-light)" label="Training done" />
+        <Legend color="var(--accent-light)" label="Training planned" />
+        <Legend color="var(--surface-2)" label="Rest" />
       </div>
     </div>
   )

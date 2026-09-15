@@ -37,11 +37,15 @@ const App = React.lazy(() =>
 
 try {
   const storedTheme = JSON.parse(localStorage.getItem('tp_theme'))
-  if (storedTheme === 'light' || storedTheme === 'dark') {
-    document.documentElement.setAttribute('data-theme', storedTheme)
-  }
+  const theme = storedTheme === 'light' || storedTheme === 'dark'
+    ? storedTheme
+    : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  document.documentElement.setAttribute('data-theme', theme)
 } catch {
-  // Ignore invalid persisted theme and fall back to system.
+  document.documentElement.setAttribute(
+    'data-theme',
+    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+  )
 }
 
 function LoadingScreen({ label = 'Loading…' }) {
@@ -99,7 +103,7 @@ class ErrorBoundary extends Component {
 }
 
 function Root() {
-  const { ready, user } = useAuth()
+  const { ready, user, recovering } = useAuth()
   const [guest, setGuest] = useState(() => {
     try {
       return localStorage.getItem('tp_guest') === '1'
@@ -112,7 +116,7 @@ function Root() {
     return <LoadingScreen />
   }
 
-  if (!user && !guest) {
+  if (recovering || (!user && !guest)) {
     return (
       <AuthScreen
         onContinueLocal={() => {

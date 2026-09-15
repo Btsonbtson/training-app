@@ -45,6 +45,10 @@ export function TreadmillCard({ workout, number, typelabel, stars, note, metrics
   const [pulling, setPulling] = useState(false)
 
   useEffect(() => {
+    setOpen(Boolean(defaultOpen))
+  }, [defaultOpen, workout.id])
+
+  useEffect(() => {
     setLocalNote(note || '')
   }, [note])
 
@@ -175,6 +179,10 @@ export function BodyweightCard({ session, number, stars, note, done, onStar, onS
   const [localNote, setLocalNote] = useState(note || '')
   const isBW = session.type === 'BW'
   const exercise = session.exercises[0]
+
+  useEffect(() => {
+    setOpen(Boolean(defaultOpen))
+  }, [defaultOpen, session.id])
 
   useEffect(() => {
     setLocalNote(note || '')

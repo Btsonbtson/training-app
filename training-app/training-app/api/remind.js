@@ -2,7 +2,9 @@ import {
   athensDateKey,
   athensHour,
   getDay,
+  isDayDone,
   whatsappMessage,
+  whatsappMissedMessage,
 } from '../src/data/schedule.js'
 
 function json(res, status, body) {
@@ -81,10 +83,7 @@ async function sendWhatsApp({ phone, text }) {
 }
 
 async function reminderTargets() {
-  const targets = []
-  if (process.env.WHATSAPP_PHONE) {
-    targets.push({ phone: process.env.WHATSAPP_PHONE })
-  }
+  const byPhone = new Map()
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -95,18 +94,31 @@ async function reminderTargets() {
     for (const row of data || []) {
       const reminder = row.data?.tp_reminders
       if (reminder?.enabled && reminder.phone) {
-        targets.push({ phone: reminder.phone })
+        const key = digits(reminder.phone)
+        if (!key) continue
+        byPhone.set(key, {
+          phone: reminder.phone,
+          tDone: row.data?.tp_td || {},
+          bDone: row.data?.tp_bd || {},
+          hasState: true,
+        })
       }
     }
   }
 
-  const seen = new Set()
-  return targets.filter((target) => {
-    const key = digits(target.phone)
-    if (!key || seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
+  if (process.env.WHATSAPP_PHONE) {
+    const key = digits(process.env.WHATSAPP_PHONE)
+    if (key && !byPhone.has(key)) {
+      byPhone.set(key, {
+        phone: process.env.WHATSAPP_PHONE,
+        tDone: {},
+        bDone: {},
+        hasState: false,
+      })
+    }
+  }
+
+  return [...byPhone.values()]
 }
 
 function isAuthorized(req) {
@@ -119,6 +131,13 @@ function isAuthorized(req) {
   return false
 }
 
+function reminderKind(hour, requested) {
+  if (requested === 'missed' || requested === 'morning') return requested
+  if (hour === 22) return 'missed'
+  if (hour === 6) return 'morning'
+  return null
+}
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     json(res, 204, {})
@@ -129,14 +148,20 @@ export default async function handler(req, res) {
   const body = req.method === 'POST' ? await readBody(req) : {}
   const testPhone = body.phone || url.searchParams.get('phone')
   const testText = body.text || url.searchParams.get('text')
+  const requestedKind = body.kind || url.searchParams.get('kind')
   const force = url.searchParams.get('force') === '1' || body.force === true
 
+  const now = new Date()
+  const dateKey = athensDateKey(now)
+  const hour = athensHour(now)
+  const day = getDay(dateKey)
+
   if (testPhone) {
-    const result = await sendWhatsApp({
-      phone: testPhone,
-      text: testText || whatsappMessage(getDay(athensDateKey())),
-    })
-    json(res, result.ok ? 200 : 502, result)
+    const kind = requestedKind === 'missed' ? 'missed' : 'morning'
+    const text = testText
+      || (kind === 'missed' ? whatsappMissedMessage(day) : whatsappMessage(day))
+    const result = await sendWhatsApp({ phone: testPhone, text })
+    json(res, result.ok ? 200 : 502, { ...result, kind })
     return
   }
 
@@ -145,17 +170,14 @@ export default async function handler(req, res) {
     return
   }
 
-  const now = new Date()
-  const dateKey = athensDateKey(now)
-  const hour = athensHour(now)
-  if (!force && hour !== 6) {
-    json(res, 200, { ok: true, skipped: 'not-06:00', dateKey, hour })
+  const kind = reminderKind(hour, force ? requestedKind : null)
+  if (!kind) {
+    json(res, 200, { ok: true, skipped: 'not-06:00-or-22:00', dateKey, hour })
     return
   }
 
-  const day = getDay(dateKey)
   if (!day || day.kind !== 'train') {
-    json(res, 200, { ok: true, skipped: 'rest-or-outside-plan', dateKey })
+    json(res, 200, { ok: true, skipped: 'rest-or-outside-plan', dateKey, kind })
     return
   }
 
@@ -165,10 +187,20 @@ export default async function handler(req, res) {
     return
   }
 
-  const text = whatsappMessage(day)
+  const text = kind === 'missed' ? whatsappMissedMessage(day) : whatsappMessage(day)
   const results = []
   for (const target of targets) {
-    results.push(await sendWhatsApp({ ...target, text }))
+    if (kind === 'missed' && target.hasState && isDayDone(day, target)) {
+      results.push({ ok: true, skipped: 'already-done' })
+      continue
+    }
+    results.push(await sendWhatsApp({ phone: target.phone, text }))
   }
-  json(res, results.every((item) => item.ok) ? 200 : 502, { dateKey, trainingNumber: day.trainingNumber, results })
+  json(res, results.every((item) => item.ok) ? 200 : 502, {
+    dateKey,
+    hour,
+    kind,
+    trainingNumber: day.trainingNumber,
+    results,
+  })
 }

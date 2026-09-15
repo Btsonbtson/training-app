@@ -1,11 +1,17 @@
+const RANGE_CAPTION = {
+  week: 'This week',
+  month: 'This month',
+  total: 'Sep–Dec',
+}
+
 export function ProgressCharts({
   progress,
-  week,
+  bars,
+  range,
   streak,
   split,
   hrPoints,
   notes,
-  todayKey,
   selected,
   onSelectDate,
 }) {
@@ -14,15 +20,14 @@ export function ProgressCharts({
       <div style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
         <ProgressRing pct={progress.pct} done={progress.done} total={progress.total} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <WeekBars
-            week={week}
-            todayKey={todayKey}
+          <ActivityBars
+            bars={bars}
             selected={selected}
             onSelectDate={onSelectDate}
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 8, fontSize: 11, color: 'var(--text-secondary)' }}>
             <span>{streak ? `${streak}-day streak` : 'No streak yet'}</span>
-            <span>{notes ? `${notes} notes` : 'This week'}</span>
+            <span>{notes ? `${notes} notes` : RANGE_CAPTION[range] || 'This week'}</span>
           </div>
         </div>
       </div>
@@ -75,7 +80,16 @@ function ProgressRing({ pct, done, total }) {
   )
 }
 
-function WeekBars({ week, todayKey, selected, onSelectDate }) {
+function barColor(bar) {
+  if (bar.status === 'rest') return 'var(--border)'
+  if (bar.status === 'done') return bar.role === 'army-chair' ? 'var(--green)' : 'var(--accent)'
+  if (bar.status === 'partial') return 'var(--accent)'
+  if (bar.status === 'missed') return 'var(--amber)'
+  return 'var(--surface-2)'
+}
+
+function ActivityBars({ bars, selected, onSelectDate }) {
+  const maxWidth = bars.length <= 4 ? 28 : 18
   return (
     <div style={{
       background: 'var(--surface)',
@@ -85,23 +99,15 @@ function WeekBars({ week, todayKey, selected, onSelectDate }) {
       height: '100%',
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 44 }}>
-        {week.map((day) => {
-          const isToday = day.date === todayKey
-          const isSelected = day.date === selected
-          const height = day.kind === 'rest' ? 10 : day.done ? 36 : day.date < todayKey ? 18 : 22
-          const bg = day.kind === 'rest'
-            ? 'var(--border)'
-            : day.done
-              ? (day.role === 'army-chair' ? 'var(--green)' : 'var(--accent)')
-              : day.date < todayKey
-                ? 'var(--amber)'
-                : 'var(--surface-2)'
+        {bars.map((bar) => {
+          const isSelected = selected && bar.from && selected >= bar.from && selected <= bar.to
+          const height = Math.round(10 + bar.fill * 26)
           return (
             <button
-              key={day.date}
+              key={bar.key}
               type="button"
-              title={day.date}
-              onClick={() => onSelectDate?.(day.date)}
+              title={bar.letter}
+              onClick={() => onSelectDate?.(bar.date)}
               style={{
                 flex: 1,
                 display: 'flex',
@@ -119,11 +125,11 @@ function WeekBars({ week, todayKey, selected, onSelectDate }) {
             >
               <div style={{
                 width: '100%',
-                maxWidth: 18,
+                maxWidth,
                 height,
                 borderRadius: 4,
-                background: bg,
-                outline: isSelected || isToday ? '1px solid var(--border-strong)' : 'none',
+                background: barColor(bar),
+                outline: isSelected || bar.current ? '1px solid var(--border-strong)' : 'none',
                 outlineOffset: 1,
               }} />
             </button>
@@ -131,15 +137,18 @@ function WeekBars({ week, todayKey, selected, onSelectDate }) {
         })}
       </div>
       <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-        {week.map((day) => (
-          <div key={`${day.date}-l`} style={{
+        {bars.map((bar) => (
+          <div key={`${bar.key}-l`} style={{
             flex: 1,
             textAlign: 'center',
             fontSize: 9,
-            fontWeight: day.date === todayKey ? 700 : 500,
-            color: day.date === todayKey ? 'var(--text)' : 'var(--text-muted)',
+            fontWeight: bar.current ? 700 : 500,
+            color: bar.current ? 'var(--text)' : 'var(--text-muted)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}>
-            {day.letter}
+            {bar.letter}
           </div>
         ))}
       </div>
