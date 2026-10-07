@@ -12,6 +12,10 @@ export const USER_STATE_KEYS = [
   'tp_tm',
   'tp_prog_range',
   'tp_reminders',
+  // Additive isometric progress — never reuse/overwrite treadmill/bodyweight keys
+  'tp_is',
+  'tp_in',
+  'tp_id',
 ]
 
 export function snapshotLocal() {

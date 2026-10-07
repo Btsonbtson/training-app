@@ -7,7 +7,8 @@ import {
   nextBodySession,
   weekStart,
 } from './data/schedule'
-import { TreadmillCard, BodyweightCard } from './components/WorkoutCard'
+import { TreadmillCard, BodyweightCard, IsoCard } from './components/WorkoutCard'
+import { isoPhases } from './data/isometric'
 import { ThemeToggle, applyTheme, resolveTheme } from './components/ThemeToggle'
 import { HiitTimer } from './components/HiitTimer'
 import { AccountBar } from './components/AccountBar'
@@ -130,6 +131,11 @@ export default function App() {
   const [band, setBand] = useStorage('tp_band', { lastSync: null, source: null, days: {} })
   const [tMetrics, setTMetrics] = useStorage('tp_tm', {})
 
+  // Isometric — new keys only (tp_is/tp_in/tp_id). Does not touch treadmill/bodyweight data.
+  const [iStars, setIStars] = useStorage('tp_is', {})
+  const [iNotes, setINotes] = useStorage('tp_in', {})
+  const [iDone, setIDone] = useStorage('tp_id', {})
+
   const todayKey = athensDateKey()
   const [selectedDate, setSelectedDate] = useState(todayKey)
   const schedule = useMemo(() => getSchedule(), [])
@@ -141,7 +147,9 @@ export default function App() {
     applyTheme(resolved)
   }, [theme, setTheme])
 
-  const activeTab = tab === 'b' ? 'b' : tab === 'band' ? 'band' : tab === 't' ? 't' : 'plan'
+  const activeTab = tab === 'b' ? 'b' : tab === 'band' ? 'band' : tab === 't' ? 't' : tab === 'i' ? 'i' : 'plan'
+  const totalI = isoPhases.reduce((acc, ph) => acc + ph.workouts.length, 0)
+  const doneI = Object.values(iDone).filter(Boolean).length
   const activeProgram = bwProgram === 'ac' ? 'ac' : 'tc'
   const doneMaps = { tDone, bDone }
   const progress = progressFor(range, selectedDate || todayKey, doneMaps)
@@ -179,6 +187,17 @@ export default function App() {
     setBNotes((n) => ({ ...n, [id]: note }))
     if (bStars[id] > 0 || (note && note.trim())) {
       setBDone((d) => ({ ...d, [id]: true }))
+    }
+  }
+
+  const handleIStar = (id, val) => {
+    setIStars((s) => ({ ...s, [id]: val }))
+    if (val > 0) setIDone((d) => ({ ...d, [id]: true }))
+  }
+  const handleISave = (id, note) => {
+    setINotes((n) => ({ ...n, [id]: note }))
+    if (iStars[id] > 0 || (note && note.trim())) {
+      setIDone((d) => ({ ...d, [id]: true }))
     }
   }
 
@@ -263,11 +282,47 @@ export default function App() {
           label="Bodyweight"
         />
         <TabButton
+          active={activeTab === 'i'}
+          onClick={() => setTab('i')}
+          label="Iso"
+        />
+        <TabButton
           active={activeTab === 'band'}
           onClick={() => setTab('band')}
           label="Band"
         />
       </div>
+
+      {activeTab === 'i' && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600 }}>Isometric · 12 εβδομάδες</h2>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{doneI} / {totalI}</span>
+          </div>
+          <ProgressBar done={doneI} total={totalI} color="#0e7490" />
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 8, lineHeight: 1.45 }}>
+            Ίδιες φωτογραφίες. W1 από το μηδέν → W12 πλήρες (3×60 · 3×80 · 3×90 · 3×90 · 2×30).
+            Τα Plan / Treadmill / Bodyweight δεδομένα σου μένουν ανέπαφα.
+          </p>
+          {isoPhases.map((ph) => (
+            <div key={ph.label}>
+              <PhaseLabel label={ph.label} />
+              {ph.workouts.map((session) => (
+                <IsoCard
+                  key={session.id}
+                  session={session}
+                  number={session.week || 1}
+                  stars={iStars[session.id] || 0}
+                  note={iNotes[session.id] || ''}
+                  done={!!iDone[session.id]}
+                  onStar={(val) => handleIStar(session.id, val)}
+                  onSave={(note) => handleISave(session.id, note)}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
 
       {activeTab === 'plan' && (
         <PlanPanel
