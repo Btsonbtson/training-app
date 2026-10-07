@@ -95,7 +95,7 @@ export default function App() {
       <div style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
         <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-.02em' }}>Training Program</h1>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
-          Treadmill · Chair Tai Chi · Army Chair · Progressive Iso
+          Treadmill · Chair Tai Chi · Army Chair HIIT
         </p>
       </div>
 
@@ -143,7 +143,7 @@ export default function App() {
       {tab === 'b' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600 }}>Bodyweight · Iso από το μηδέν</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 600 }}>Bodyweight · 9' HIIT</h2>
             <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{doneB} / {totalB}</span>
           </div>
           <ProgressBar done={doneB} total={totalB} color="var(--green)" />

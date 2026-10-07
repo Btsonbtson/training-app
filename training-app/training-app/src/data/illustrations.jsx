@@ -247,7 +247,7 @@ const SitToStandSquats = () => <Wrap label="3 sets × 15 reps">
   <StandSq hx={115} hy={30} al="fwd" ar="fwd" />
 </Wrap>
 
-const ChairPlank = () => <Wrap label="progressive hold · start 8–12 sec">
+const ChairPlank = () => <Wrap label="3 sets × 30 sec hold">
   <Ground />
   <rect x="18" y="82" width="58" height="9" rx="3" fill={CH} />
   {ln(28, 91, 28, 138, CH, 5)}{ln(66, 91, 66, 138, CH, 5)}
@@ -334,7 +334,7 @@ const TricepDips = () => <Wrap label="3 sets × 12–15 reps legs straight">
   {ln(118, 65, 68, 62, SK, 7)}{tx(28, 50, '↕', AC, 16)}
 </Wrap>
 
-const ChairPlankShoulderTaps = () => <Wrap label="3 sets × 8–10 taps">
+const ChairPlankShoulderTaps = () => <Wrap label="3 sets × 20 taps">
   <Ground />
   <rect x="18" y="82" width="58" height="9" rx="3" fill={CH} />
   {ln(28, 91, 28, 138, CH, 5)}{ln(66, 91, 66, 138, CH, 5)}
@@ -381,7 +381,7 @@ const SeatedBicycleCrunch = () => <Wrap label="3 sets × 20 reps">
   {pa('M148 60 Q138 72 148 80', AC, 2.5)}{tx(104, 86, '↺ bicycle', AC, 9)}
 </Wrap>
 
-const ChairDipsHoldPulse = () => <Wrap label="3 sets × 6–8 reps · short hold">
+const ChairDipsHoldPulse = () => <Wrap label="3 sets × 15 reps hold & pulse">
   <Ground />
   <rect x="18" y="68" width="60" height="8" rx="3" fill={CH} />
   {ln(28, 76, 28, 138, CH, 5)}{ln(68, 76, 68, 138, CH, 5)}
@@ -407,7 +407,7 @@ const DeclinePushUps = () => <Wrap label="3 sets × 12–15 reps feet elevated">
   {ln(48, 88, 182, 64, SK, 6)}{ln(76, 88, 250, 66, SK, 6)}
 </Wrap>
 
-const SquatHold = () => <Wrap label="3 sets × 12–20 sec · build up">
+const SquatHold = () => <Wrap label="3 sets × 30–45 sec isometric">
   <Ground />
   <rect x="188" y="82" width="58" height="8" rx="3" fill={CH} />
   {ln(198, 90, 198, 138, CH, 5)}{ln(236, 90, 236, 138, CH, 5)}
@@ -449,7 +449,7 @@ const ChairDipsKneeTuck = () => <Wrap label="3 sets × 12–15 reps">
   {tx(98, 68, 'tuck↑', AC, 9)}
 </Wrap>
 
-const SeatedHoldFinishStrong = () => <Wrap label="progressive · start 10–15 sec">
+const SeatedHoldFinishStrong = () => <Wrap label="3 sets × 45–60 sec · Day 28!">
   <Chair x={105} y={42} /><Seated hx={138} hy={47} al="up" ar="up" />
   {tx(138, 30, 'FINISH STRONG', AC, 10)}
   {pa('M108 38 Q138 28 168 38', AC, 2)}
