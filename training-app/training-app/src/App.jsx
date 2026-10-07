@@ -1,17 +1,15 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { TREAD_TYPE_LABEL } from './data/treadmill'
 import {
   athensDateKey,
   formatDateLabel,
   getSchedule,
-  nextBodySession,
   weekStart,
 } from './data/schedule'
-import { TreadmillCard, BodyweightCard } from './components/WorkoutCard'
+import { TreadmillCard, IsoCard } from './components/WorkoutCard'
+import { isoPhases } from './data/isometric'
 import { ThemeToggle, applyTheme, resolveTheme } from './components/ThemeToggle'
-import { HiitTimer } from './components/HiitTimer'
 import { AccountBar } from './components/AccountBar'
-import { BandPanel } from './components/BandPanel'
 import { PlanPanel } from './components/PlanPanel'
 import { ProgressCharts } from './components/ProgressCharts'
 import { useStorage } from './hooks/useStorage'
@@ -25,10 +23,6 @@ import {
   splitProgress,
 } from './lib/progress'
 
-const ProgramPoster = lazy(() =>
-  import('./components/PosterArt').then((mod) => ({ default: mod.ProgramPoster }))
-)
-
 function ProgressBar({ done, total, color }) {
   return (
     <div style={{ height: 3, background: 'var(--border)', borderRadius: 2, marginBottom: '1.25rem' }}>
@@ -41,18 +35,6 @@ function ProgressBar({ done, total, color }) {
       }} />
     </div>
   )
-}
-
-function findHiitFocus(schedule, program, focusId, todayKey) {
-  if (focusId) {
-    for (const day of schedule) {
-      const session = program === 'ac' ? day.armyChair : day.taiChi
-      if (session?.id === focusId) {
-        return { session, date: day.date, isToday: day.date === todayKey }
-      }
-    }
-  }
-  return nextBodySession(todayKey, program)
 }
 
 function PhaseLabel({ label }) {
@@ -122,13 +104,16 @@ export default function App() {
   const [tNotes, setTNotes] = useStorage('tp_tn', {})
   const [tDone, setTDone] = useStorage('tp_td', {})
 
+  // Kept for Plan calendar history — never wipe these keys
   const [bStars, setBStars] = useStorage('tp_bs', {})
   const [bNotes, setBNotes] = useStorage('tp_bn', {})
   const [bDone, setBDone] = useStorage('tp_bd', {})
-  const [bwProgram, setBwProgram] = useStorage('tp_bw_prog', 'tc')
-  const [hiitFocusId, setHiitFocusId] = useState(null)
-  const [band, setBand] = useStorage('tp_band', { lastSync: null, source: null, days: {} })
   const [tMetrics, setTMetrics] = useStorage('tp_tm', {})
+
+  // Isometrics — additive keys only
+  const [iStars, setIStars] = useStorage('tp_is', {})
+  const [iNotes, setINotes] = useStorage('tp_in', {})
+  const [iDone, setIDone] = useStorage('tp_id', {})
 
   const todayKey = athensDateKey()
   const [selectedDate, setSelectedDate] = useState(todayKey)
@@ -141,23 +126,23 @@ export default function App() {
     applyTheme(resolved)
   }, [theme, setTheme])
 
-  const activeTab = tab === 'b' ? 'b' : tab === 'band' ? 'band' : tab === 't' ? 't' : 'plan'
-  const activeProgram = bwProgram === 'ac' ? 'ac' : 'tc'
+  // Migrate old tab ids (b/band) → Isometrics / Plan without clearing data
+  useEffect(() => {
+    if (tab === 'b' || tab === 'band') setTab('i')
+  }, [tab, setTab])
+
+  const activeTab = tab === 't' ? 't' : tab === 'i' ? 'i' : 'plan'
+  const totalI = isoPhases.reduce((acc, ph) => acc + ph.workouts.length, 0)
+  const doneI = Object.values(iDone).filter(Boolean).length
   const doneMaps = { tDone, bDone }
   const progress = progressFor(range, selectedDate || todayKey, doneMaps)
   const activityBars = rangeActivity(range, selectedDate || todayKey, doneMaps, todayKey)
   const streak = completionStreak(todayKey, doneMaps)
   const split = splitProgress(range, selectedDate || todayKey, doneMaps)
   const hrPoints = hrTrend(schedule, tMetrics)
-  const hiitFocus = findHiitFocus(schedule, activeProgram, hiitFocusId, todayKey)
 
   const treadDays = schedule.filter((day) => day.treadmill)
-  const bodyDays = schedule.filter((day) => (activeProgram === 'ac' ? day.armyChair : day.taiChi))
   const treadDone = treadDays.filter((day) => tDone[day.treadmill.id]).length
-  const bodyDone = bodyDays.filter((day) => {
-    const session = activeProgram === 'ac' ? day.armyChair : day.taiChi
-    return session && bDone[session.id]
-  }).length
 
   const handleTStar = (id, val) => {
     setTStars((s) => ({ ...s, [id]: val }))
@@ -182,13 +167,15 @@ export default function App() {
     }
   }
 
-  const handleStartHiit = (session) => {
-    setHiitFocusId(session.id)
-    setBwProgram(session.program === 'ac' ? 'ac' : 'tc')
-    setTab('b')
-    window.requestAnimationFrame(() => {
-      document.getElementById('hiit-timer')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
+  const handleIStar = (id, val) => {
+    setIStars((s) => ({ ...s, [id]: val }))
+    if (val > 0) setIDone((d) => ({ ...d, [id]: true }))
+  }
+  const handleISave = (id, note) => {
+    setINotes((n) => ({ ...n, [id]: note }))
+    if (iStars[id] > 0 || (note && note.trim())) {
+      setIDone((d) => ({ ...d, [id]: true }))
+    }
   }
 
   return (
@@ -198,7 +185,7 @@ export default function App() {
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-.02em' }}>Training Program</h1>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
-              8 Sep – 31 Dec 2026 · Friday rest
+              Plan · Treadmill · Isometrics
             </p>
           </div>
           <ThemeToggle theme={theme} onChange={setTheme} />
@@ -252,21 +239,8 @@ export default function App() {
         marginBottom: '1.25rem',
       }}>
         <TabButton active={activeTab === 'plan'} onClick={() => setTab('plan')} label="Plan" />
-        <TabButton
-          active={activeTab === 't'}
-          onClick={() => setTab('t')}
-          label="Treadmill"
-        />
-        <TabButton
-          active={activeTab === 'b'}
-          onClick={() => setTab('b')}
-          label="Bodyweight"
-        />
-        <TabButton
-          active={activeTab === 'band'}
-          onClick={() => setTab('band')}
-          label="Band"
-        />
+        <TabButton active={activeTab === 't'} onClick={() => setTab('t')} label="Treadmill" />
+        <TabButton active={activeTab === 'i'} onClick={() => setTab('i')} label="Isometrics" />
       </div>
 
       {activeTab === 'plan' && (
@@ -323,60 +297,32 @@ export default function App() {
         </div>
       )}
 
-      {activeTab === 'band' && (
-        <BandPanel band={band} onChange={setBand} />
-      )}
-
-      {activeTab === 'b' && (
+      {activeTab === 'i' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600 }}>Bodyweight · 9' HIIT</h2>
-            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{bodyDone} / {bodyDays.length}</span>
+            <h2 style={{ fontSize: 16, fontWeight: 600 }}>Isometrics · 12 εβδομάδες</h2>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{doneI} / {totalI}</span>
           </div>
-          <ProgressBar done={bodyDone} total={bodyDays.length} color="var(--green)" />
-          <HiitTimer
-            key={hiitFocus?.session?.id || 'empty'}
-            session={hiitFocus?.session}
-            dateLabel={hiitFocus ? `${hiitFocus.isToday ? 'Today' : formatDateLabel(hiitFocus.date)}` : ''}
-          />
-
-          <div style={{
-            display: 'flex',
-            gap: 4,
-            background: 'var(--surface-2)',
-            borderRadius: 'var(--radius)',
-            padding: 3,
-            marginBottom: '1rem',
-          }}>
-            <TabButton active={activeProgram === 'tc'} onClick={() => setBwProgram('tc')} label="Chair Tai Chi" />
-            <TabButton active={activeProgram === 'ac'} onClick={() => setBwProgram('ac')} label="Army Chair" />
-          </div>
-
-          <Suspense fallback={null}>
-            <ProgramPoster program={activeProgram} />
-          </Suspense>
-
-          {groupByWeek(bodyDays).map((group) => (
-            <div key={group.key}>
-              <PhaseLabel label={`${formatDateLabel(group.key)} week`} />
-              {group.days.map((day) => {
-                const session = activeProgram === 'ac' ? day.armyChair : day.taiChi
-                return (
-                  <BodyweightCard
-                    key={session.id}
-                    session={session}
-                    number={session.day}
-                    stars={bStars[session.id] || 0}
-                    note={bNotes[session.id] || ''}
-                    done={!!bDone[session.id]}
-                    dateLabel={formatDateLabel(day.date)}
-                    defaultOpen={day.date === todayKey}
-                    onStar={(val) => handleBStar(session.id, val)}
-                    onSave={(note) => handleBSave(session.id, note)}
-                    onStartHiit={() => handleStartHiit(session)}
-                  />
-                )
-              })}
+          <ProgressBar done={doneI} total={totalI} color="#0e7490" />
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 8, lineHeight: 1.45 }}>
+            Ίδιες φωτογραφίες. W1 από το μηδέν → W12 πλήρες (3×60 · 3×80 · 3×90 · 3×90 · 2×30).
+            Plan / Treadmill δεδομένα ανέπαφα.
+          </p>
+          {isoPhases.map((ph) => (
+            <div key={ph.label}>
+              <PhaseLabel label={ph.label} />
+              {ph.workouts.map((session) => (
+                <IsoCard
+                  key={session.id}
+                  session={session}
+                  number={session.week || 1}
+                  stars={iStars[session.id] || 0}
+                  note={iNotes[session.id] || ''}
+                  done={!!iDone[session.id]}
+                  onStar={(val) => handleIStar(session.id, val)}
+                  onSave={(note) => handleISave(session.id, note)}
+                />
+              ))}
             </div>
           ))}
         </div>
