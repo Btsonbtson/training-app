@@ -1,310 +1,222 @@
+function densify(text, cycle) {
+  if (cycle < 2 || typeof text !== 'string') return text
+  return text
+    .replaceAll('3 sets', `${2 + cycle} sets`)
+    .replaceAll('5 deep breaths', `${4 + cycle} deep breaths`)
+    .replaceAll('1 full round', `${cycle} full rounds`)
+}
+
+function day(program, type, n, name, sets, desc, note) {
+  return {
+    id: `${program}${n}`,
+    type,
+    program,
+    day: n,
+    title: name,
+    struct: sets,
+    exercises: [{ name, sets, desc }],
+    note,
+  }
+}
+
+const tc = (n, name, sets, desc, note) => day('tc', 'TC', n, name, sets, desc, note)
+const ac = (n, name, sets, desc, note) => day('ac', 'BW', n, name, sets, desc, note)
+
 export const bodyPhases = [
   {
-    label: 'Week 1 — Foundation (Tai Chi) + Army Days 1–7',
+    program: 'tc',
+    poster: 'tc',
+    label: 'Week 1 — Foundation',
+    focus: 'Build Awareness & Stability',
     workouts: [
-      {
-        id: 'b1', type: 'TC', title: 'Tai Chi — Week 1 Foundation',
-        struct: "2' warmup · 3×(40''/20') · 1' cool",
-        exercises: [
-          { name: 'Opening Breath', sets: '5 deep breaths', desc: 'Sit tall. Feet flat. Breathe deeply and settle in.' },
-          { name: 'Rising Hands', sets: '8 reps', desc: 'Lift arms slowly in front to shoulder height.' },
-          { name: 'Wave Hands', sets: '8 reps', desc: 'Sway arms side to side like steady waves.' },
-          { name: 'Brush Knee', sets: '8 reps each side', desc: 'Brush one hand down the knee. Switch sides.' },
-          { name: 'Cloud Hands', sets: '10 reps', desc: 'Move arms in soft circles like moving clouds.' },
-          { name: 'Push the Mountain', sets: '10 reps', desc: 'Push both hands forward gently with control.' },
-        ],
-        note: 'Week 1 Flow: move through Days 1–5 slowly without stopping — 1 full round.',
-      },
-      {
-        id: 'b2', type: 'BW', title: 'Army Chair — Days 1–3',
-        struct: "2' warmup · 3 sets · 1' cool",
-        exercises: [
-          { name: 'Chair Push-ups', sets: '3 sets × 12–15 reps', desc: 'Hands on chair edge. Body straight. Lower slowly.' },
-          { name: 'Sit to Stand Squats', sets: '3 sets × 15 reps', desc: 'Stand fully from seated. Control the descent.' },
-          { name: 'Chair Plank', sets: '3 sets × 30 sec', desc: 'Hands on seat. Body straight as a plank.' },
-        ],
-        note: 'Days 1–3: foundation strength base.',
-      },
-      {
-        id: 'b3', type: 'TC', title: 'Tai Chi — Week 1 Days 4–7',
-        struct: "2' warmup · 3×(45''/15') · 1' cool",
-        exercises: [
-          { name: 'Brush Knee', sets: '8 reps each side', desc: 'Brush one hand down the knee. Switch sides.' },
-          { name: 'Cloud Hands', sets: '10 reps', desc: 'Soft circles like moving clouds.' },
-          { name: 'Push the Mountain', sets: '10 reps', desc: 'Push both hands forward gently.' },
-          { name: 'Week 1 Flow', sets: '1 full round', desc: 'Days 1–5 slowly without stopping.' },
-        ],
-        note: 'Closing flow — build awareness & stability.',
-      },
-      {
-        id: 'b4', type: 'BW', title: 'Army Chair — Days 4–7',
-        struct: "2' warmup · 3 sets · 1' cool",
-        exercises: [
-          { name: 'Alternating Leg Extensions', sets: '3 sets × 15 reps each leg', desc: 'Extend each leg fully, hold 1 sec, lower.' },
-          { name: 'Chair Dips', sets: '3 sets × 12–15 reps', desc: 'Hands on chair edge, dip down, push up.' },
-          { name: 'Seated Knee Raises', sets: '3 sets × 15 reps', desc: 'Alternate knee raises, core tight.' },
-          { name: 'Russian Twists (Seated)', sets: '3 sets × 20 reps', desc: 'Hands clasped, rotate torso L/R.' },
-        ],
-        note: 'Days 4–7: legs, endurance, core.',
-      },
+      tc(1, 'Opening Breath', '5 deep breaths', 'Sit tall. Feet flat. Breathe deeply and settle in.', 'Week 1 Foundation — start slow and stay seated.'),
+      tc(2, 'Rising Hands', '8 reps', 'Lift arms slowly in front to shoulder height.', 'Keep shoulders relaxed as the arms rise.'),
+      tc(3, 'Wave Hands', '10 reps', 'Sway arms side to side like steady waves.', 'Move from the waist, not just the arms.'),
+      tc(4, 'Brush Knee', '8 reps each side', 'Brush one hand down the knee. Switch sides.', 'Alternate sides with the same slow tempo.'),
+      tc(5, 'Cloud Hands', '10 reps', 'Move arms in soft circles like moving clouds.', 'Keep the circles even and continuous.'),
+      tc(6, 'Push the Mountain', '10 reps', 'Push both hands forward gently with control.', 'Exhale as the hands travel forward.'),
+      tc(7, 'Week 1 Flow', '1 full round', 'Move through Days 1–6 slowly without stopping.', 'Link the week into one seated flow.'),
     ],
   },
   {
-    label: 'Week 2 — Strength (Tai Chi) + Army Days 8–14',
+    program: 'tc',
+    poster: 'tc',
+    label: 'Week 2 — Strength',
+    focus: 'Improve Control & Strength',
     workouts: [
-      {
-        id: 'b5', type: 'TC', title: 'Tai Chi — Week 2 Strength',
-        struct: "2' warmup · 3×(45''/15') · 1' cool",
-        exercises: [
-          { name: 'Ward Off', sets: '8 reps each side', desc: 'Press one hand forward, other near ear. Switch.' },
-          { name: 'Single Whip', sets: '8 reps each side', desc: 'Extend one arm out and down. Other arm back.' },
-          { name: 'White Crane', sets: '8 reps', desc: 'Lift arms up, other arm down. Open like wings.' },
-          { name: 'Cross Hands', sets: '10 reps', desc: 'Cross arms in front of chest, open wide.' },
-        ],
-        note: 'Week 2 — improve control & strength.',
-      },
-      {
-        id: 'b6', type: 'BW', title: 'Army Chair — Days 8–10',
-        struct: "2' warmup · 3 sets · 1' cool",
-        exercises: [
-          { name: 'Wide Push-ups (Hands on Chair)', sets: '3 sets × 12–15 reps', desc: 'Wider grip, targets chest & back.' },
-          { name: 'Seated Leg Raises', sets: '3 sets × 15 reps', desc: 'Lift straight leg, hold, lower slowly.' },
-          { name: 'Chair Pike Push-ups', sets: '3 sets × 10–12 reps', desc: 'Hips high V-shape, press head toward floor.' },
-        ],
-        note: 'Days 8–10: upper body strength push.',
-      },
-      {
-        id: 'b7', type: 'TC', title: 'Tai Chi — Week 2 Days 12–14',
-        struct: "2' warmup · 3×(50''/10') · 1' cool",
-        exercises: [
-          { name: 'Roll Back', sets: '10 reps', desc: 'Roll both hands back slowly, pull toward hips.' },
-          { name: 'Repulse Monkey', sets: '10 reps each side', desc: 'Push one hand forward, pull other back.' },
-          { name: 'Week 2 Flow', sets: '1 full round', desc: 'Days 8–13 slowly with control and focus.' },
-        ],
-        note: 'Week 2 full round — control & strength.',
-      },
-      {
-        id: 'b8', type: 'BW', title: 'Army Chair — Days 11–14',
-        struct: "2' warmup · 3 sets · 1' cool",
-        exercises: [
-          { name: 'Single Leg Sit to Stand', sets: '3 sets × 10 reps each leg', desc: 'One foot off floor. Stand on single leg.' },
-          { name: 'Seated Oblique Crunch', sets: '3 sets × 15 reps each side', desc: 'Elbow to opposite knee, controlled crunch.' },
-          { name: 'Tricep Dips (Legs Extended)', sets: '3 sets × 12–15 reps', desc: 'Legs straight out. Deep dip with control.' },
-          { name: 'Chair Plank Shoulder Taps', sets: '3 sets × 20 taps', desc: 'Plank on chair. Tap opposite shoulder, no rotation.' },
-        ],
-        note: 'Days 11–14: legs, obliques, triceps, stability.',
-      },
+      tc(8, 'Ward Off', '8 reps each side', 'Press one hand forward, the other near chest. Switch.', 'Week 2 Strength — press with control.'),
+      tc(9, 'Single Whip', '8 reps each side', 'Extend one arm out and draw back. Switch.', 'Reach long, then gather the arm back in.'),
+      tc(10, 'White Crane', '8 reps each side', 'Lift arm up, other arm down. Open like wings.', 'Open the chest as the arms separate.'),
+      tc(11, 'Cross Hands', '10 reps', 'Cross arms in front of chest and open wide.', 'Cross, then open without rushing.'),
+      tc(12, 'Roll Back', '10 reps', 'Roll both hands back slowly toward hips.', 'Let the hands travel close to the body.'),
+      tc(13, 'Repulse Monkey', '10 reps each side', 'Push one hand forward, pull the other back.', 'Opposite hands, same slow rhythm.'),
+      tc(14, 'Week 2 Flow', '1 full round', 'Move through Days 8–13 slowly with control and focus.', 'Keep the strength work smooth, not forced.'),
     ],
   },
   {
-    label: 'Week 3 — Balance (Tai Chi) + Army Days 15–21',
+    program: 'tc',
+    poster: 'tc',
+    label: 'Week 3 — Balance',
+    focus: 'Enhance Balance & Flexibility',
     workouts: [
-      {
-        id: 'b9', type: 'TC', title: 'Tai Chi — Week 3 Balance',
-        struct: "2' warmup · 4×(45''/10') · 1' cool",
-        exercises: [
-          { name: 'Diagonal Flying', sets: '8 reps each side', desc: 'Lift arms diagonally wide. One rises, one drops.' },
-          { name: 'Spinal Twist', sets: '8 reps each side', desc: 'Rotate torso out and down each side.' },
-          { name: 'Embrace Tiger', sets: '8 reps', desc: 'Circle arms wide as if hugging a tree.' },
-          { name: 'Silk Reeling Circles', sets: '8 reps', desc: 'Circle arms to one side then the other.' },
-        ],
-        note: 'Week 3 — enhance balance & flexibility.',
-      },
-      {
-        id: 'b10', type: 'BW', title: 'Army Chair — Days 15–17',
-        struct: "2' warmup · 3 sets · 1' cool",
-        exercises: [
-          { name: 'Incline Push-ups (Hands on Chair)', sets: '3 sets × 15 reps', desc: 'Hands elevated on chair. Targets upper chest.' },
-          { name: 'Seated Marches', sets: '3 sets × 20 reps', desc: 'March in place seated. Drive knees up alternately.' },
-          { name: 'Chair Mountain Climbers', sets: '3 sets × 20 reps', desc: 'Plank on chair. Drive knee to chest alternately.' },
-        ],
-        note: 'Days 15–17: cardio burst + upper push.',
-      },
-      {
-        id: 'b11', type: 'TC', title: 'Tai Chi — Week 3 Days 18–21',
-        struct: "2' warmup · 4×(50''/10') · 1' cool",
-        exercises: [
-          { name: 'Shoulder Rolls', sets: '10 reps each direction', desc: 'Roll shoulders back slowly and down.' },
-          { name: 'Ankle Circles', sets: '10 circles each foot', desc: 'Lift one foot, slow circles with ankle. Switch.' },
-          { name: 'Week 3 Flow', sets: '1 full round', desc: 'Days 15–20 slowly with balance.' },
-        ],
-        note: 'Week 3 closing — joint mobility focus.',
-      },
-      {
-        id: 'b12', type: 'BW', title: 'Army Chair — Days 18–21',
-        struct: "2' warmup · 3 sets · 1' cool",
-        exercises: [
-          { name: 'Seated Front Kicks', sets: '3 sets × 15 reps each leg', desc: 'Kick leg forward powerfully from seated.' },
-          { name: 'Seated Bicycle Crunch', sets: '3 sets × 20 reps', desc: 'Alternate elbow to opposite knee.' },
-          { name: 'Chair Dips (Hold & Pulse)', sets: '3 sets × 15 reps', desc: 'Dip down, hold at bottom, small pulses.' },
-          { name: 'Seated Twist & Reach', sets: '3 sets × 15 reps each side', desc: 'Twist torso + reach arm high opposite side.' },
-        ],
-        note: 'Days 18–21: kicks, core, endurance.',
-      },
+      tc(15, 'Diagonal Flying', '8 reps each side', 'Lift arms diagonally wide. One arm rises, one drops.', 'Week 3 Balance — stay tall in the chair.'),
+      tc(16, 'Spinal Twist', '8 reps each side', 'Rotate torso slowly side to side.', 'Turn from the waist. Keep hips quiet.'),
+      tc(17, 'Embrace Tiger', '8 reps', 'Circle arms wide as if hugging a tree.', 'Make the circle large and even.'),
+      tc(18, 'Silk Reeling Circles', '8 reps', 'Circle arms to one side then the other.', 'Reel the circles without locking the elbows.'),
+      tc(19, 'Shoulder Rolls', '10 reps each direction', 'Roll shoulders back and down slowly.', 'Finish each roll by dropping the shoulders.'),
+      tc(20, 'Ankle Circles', '10 circles each', 'Lift one foot slightly. Draw circles with ankle. Switch.', 'Small, complete circles. Then switch feet.'),
+      tc(21, 'Week 3 Flow', '1 full round', 'Move through Days 15–20 slowly with balance.', 'Use the week as one balanced sequence.'),
     ],
   },
   {
-    label: 'Week 4 — Mastery (Tai Chi) + Army Days 22–28',
+    program: 'tc',
+    poster: 'tc',
+    label: 'Week 4 — Mastery',
+    focus: 'Refine Movement & Build Flow',
     workouts: [
-      {
-        id: 'b13', type: 'TC', title: 'Tai Chi — Week 4 Mastery',
-        struct: "2' warmup · 4×(50''/10') · 1' cool",
-        exercises: [
-          { name: 'Seated Press', sets: '10 reps', desc: 'Press palms forward from chest.' },
-          { name: 'Fair Lady Works at Shuttles', sets: '4 reps each side', desc: 'One arm pushes forward, other pulls back.' },
-          { name: 'Double Wind', sets: '10 reps', desc: 'Both arms sweep to one side parting mist, then other.' },
-          { name: 'Knee Sweep Flow', sets: '6–8 reps each side', desc: 'Brush hand past knee, other palm faces up.' },
-        ],
-        note: 'Week 4 — refine movement & build flow.',
-      },
-      {
-        id: 'b14', type: 'BW', title: 'Army Chair — Days 22–24',
-        struct: "2' warmup · 3 sets · 1' cool",
-        exercises: [
-          { name: 'Decline Push-ups (Feet on Chair)', sets: '3 sets × 12–15 reps', desc: 'Feet elevated. Targets upper chest & shoulders.' },
-          { name: 'Squat Hold (Sit & Hold)', sets: '3 sets × 30–45 sec', desc: 'Hover just above chair seat. Isometric burn.' },
-          { name: 'Chair Plank Side to Side', sets: '3 sets × 20 reps', desc: 'From plank position, step feet side to side.' },
-        ],
-        note: 'Days 22–24: advanced strength + isometric.',
-      },
-      {
-        id: 'b15', type: 'TC', title: 'Tai Chi — Week 4 Days 25–28',
-        struct: "2' warmup · 5×(50''/10') · 1' cool",
-        exercises: [
-          { name: "Wild Horse's Mane", sets: '6–8 reps each side', desc: 'Sweep one arm side to side over shoulder.' },
-          { name: 'Neck Release', sets: '2 min', desc: 'Tilt head slowly side to side. Breathe deeply.' },
-          { name: 'Seated Meditation', sets: '2–5 min', desc: 'Sit tall and still. Breathe deeply and relax.' },
-        ],
-        note: 'Week 4 finale — seated meditation closing.',
-      },
-      {
-        id: 'b16', type: 'BW', title: 'Army Chair — Days 25–28',
-        struct: "2' warmup · 3 sets · 1' cool",
-        exercises: [
-          { name: 'Seated Leg Circles', sets: '3 sets × 10 circles each leg', desc: 'Extend leg, draw large slow circles.' },
-          { name: 'Seated V-ups', sets: '3 sets × 15 reps', desc: 'Lean back, lift legs + reach arms forward.' },
-          { name: 'Chair Dips with Knee Tuck', sets: '3 sets × 12–15 reps', desc: 'Dip + tuck one knee up at bottom.' },
-          { name: 'Seated Hold Finish Strong', sets: '3 sets × 45–60 sec', desc: 'Final isometric hold — Finish Strong!' },
-        ],
-        note: 'Days 25–28 Finale — 28-Day Challenge COMPLETE!',
-      },
+      tc(22, 'Seated Press', '10 reps', 'Press palms forward from chest.', 'Week 4 Mastery — refine every repetition.'),
+      tc(23, 'Fair Lady Works at Shuttles', '6 reps each side', 'One arm pushes forward, other pulls back.', 'Keep the shuttle rhythm even on both sides.'),
+      tc(24, 'Double Wind', '10 reps', 'Both arms sweep one side then the other.', 'Sweep together, then change sides.'),
+      tc(25, 'Knee Sweep Flow', '6–8 reps each side', 'Brush hand past knee, push opposite palm.', 'Brush, then send the other palm forward.'),
+      tc(26, "Wild Horse's Mane", '6–8 reps each side', 'Sweep one arm back and look over shoulder.', 'Follow the hand with the eyes.'),
+      tc(27, 'Neck Release', '2 minutes', 'Tilt head slowly side to side. Breathe deeply.', 'No forcing. Small range is enough.'),
+      tc(28, 'Seated Meditation', '2–5 minutes', 'Sit tall and still. Breathe deeply and relax.', 'Close the 28-day Tai Chi program here.'),
     ],
   },
   {
-    label: 'Φάση 5 — Peak · Πλήρη Προγράμματα',
+    program: 'ac',
+    poster: 'ac',
+    label: 'Week 1 — Base',
+    focus: 'Strength, core, and chair control',
     workouts: [
-      {
-        id: 'b17', type: 'TC', title: 'Tai Chi Peak — Week 1+2 Flow',
-        struct: "2' warmup · 5×(50''/10') · 1' cool",
-        exercises: [
-          { name: 'Opening Breath', sets: '5 breaths', desc: 'Ground yourself — σύνδεση.' },
-          { name: 'Cloud Hands', sets: '10 reps', desc: 'Week 1 signature flow.' },
-          { name: 'Ward Off', sets: '8 each side', desc: 'Week 2 strength move.' },
-          { name: 'Cross Hands', sets: '10 reps', desc: 'Week 2 control.' },
-        ],
-        note: 'Week 1+2 combined sequence in flow.',
-      },
-      {
-        id: 'b18', type: 'BW', title: 'Army Push Peak — All 4 Variations',
-        struct: "2' warmup · 4 sets · 1' cool",
-        exercises: [
-          { name: 'Chair Push-ups', sets: '4 sets × 15 reps', desc: 'Day 1 — standard base.' },
-          { name: 'Wide Push-ups (Hands on Chair)', sets: '4 sets × 15 reps', desc: 'Day 8 — wider grip.' },
-          { name: 'Incline Push-ups (Hands on Chair)', sets: '4 sets × 15 reps', desc: 'Day 15 — elevated angle.' },
-          { name: 'Decline Push-ups (Feet on Chair)', sets: '4 sets × 12 reps', desc: 'Day 22 — peak variation.' },
-        ],
-        note: 'All 4 push-up progressions — peak circuit.',
-      },
-      {
-        id: 'b19', type: 'TC', title: 'Tai Chi Peak — Week 3+4 Flow',
-        struct: "2' warmup · 5×(55''/5') · 1' cool",
-        exercises: [
-          { name: 'Diagonal Flying', sets: '8 each side', desc: 'Week 3 balance.' },
-          { name: 'Embrace Tiger', sets: '8 reps', desc: 'Week 3 flow.' },
-          { name: 'Seated Press', sets: '10 reps', desc: 'Week 4 mastery.' },
-          { name: 'Seated Meditation', sets: '5 min', desc: 'Full closing.' },
-        ],
-        note: 'Week 3+4 combined sequence — balance & mastery peak.',
-      },
-      {
-        id: 'b20', type: 'BW', title: 'Army Core Peak',
-        struct: "2' warmup · 4 sets · 1' cool",
-        exercises: [
-          { name: 'Seated Bicycle Crunch', sets: '4 sets × 25 reps', desc: 'Max core rotation.' },
-          { name: 'Chair Mountain Climbers', sets: '4 sets × 25 reps', desc: 'Max cardio drive.' },
-          { name: 'Seated V-ups', sets: '4 sets × 20 reps', desc: 'Max core compression.' },
-          { name: 'Chair Dips with Knee Tuck', sets: '4 sets × 15 reps', desc: 'Strength + tuck peak.' },
-        ],
-        note: 'Core + cardio peak circuit — 4 rounds.',
-      },
-      {
-        id: 'b21', type: 'TC', title: 'Tai Chi — Complete 28-Day Flow',
-        struct: "2' warmup · 5×(60''/5') · 1' cool",
-        exercises: [
-          { name: 'Opening Breath', sets: '5 breaths', desc: 'Week 1 — grounding.' },
-          { name: 'Wave Hands', sets: '8 reps', desc: 'Week 1 flow.' },
-          { name: 'Single Whip', sets: '8 each side', desc: 'Week 2 strength.' },
-          { name: 'Silk Reeling Circles', sets: '8 reps', desc: 'Week 3 balance.' },
-          { name: 'Seated Meditation', sets: '5 min', desc: 'Week 4 closing.' },
-        ],
-        note: 'Πλήρης ακολουθία 4 εβδομάδων σε ένα session.',
-      },
-      {
-        id: 'b22', type: 'BW', title: 'Army — Milestone Circuit',
-        struct: "2' warmup · 4 sets · 1' cool",
-        exercises: [
-          { name: 'Chair Push-ups', sets: '4×15', desc: 'Day 1 foundation.' },
-          { name: 'Tricep Dips (Legs Extended)', sets: '4×15', desc: 'Day 13 arms.' },
-          { name: 'Chair Mountain Climbers', sets: '4×25', desc: 'Day 17 cardio.' },
-          { name: 'Seated Hold Finish Strong', sets: '4×60s', desc: 'Day 28 finale.' },
-        ],
-        note: '4 milestone exercises — full program highlights.',
-      },
-      {
-        id: 'b23', type: 'TC', title: 'Tai Chi — Grand Finale',
-        struct: "2' warmup · 5×(60''/5') · 1' cool",
-        exercises: [
-          { name: 'Opening Breath', sets: '5 breaths', desc: 'Begin — grounding.' },
-          { name: 'Cloud Hands', sets: '10 reps', desc: 'Foundation signature.' },
-          { name: 'Repulse Monkey', sets: '10 each side', desc: 'Strength & control.' },
-          { name: 'Ankle Circles', sets: '10 each foot', desc: 'Joint mobility.' },
-          { name: 'Seated Meditation', sets: '5 min', desc: '🎯 28-Day Tai Chi COMPLETE!' },
-        ],
-        note: 'Grand Finale — πλήρης Tai Chi ακολουθία.',
-      },
-      {
-        id: 'b24', type: 'BW', title: 'Army — Strength & Isometric Peak',
-        struct: "2' warmup · 4 sets · 1' cool",
-        exercises: [
-          { name: 'Chair Pike Push-ups', sets: '4×12', desc: 'Shoulder peak.' },
-          { name: 'Squat Hold (Sit & Hold)', sets: '4×45s', desc: 'Isometric peak.' },
-          { name: 'Chair Plank Side to Side', sets: '4×20', desc: 'Plank mobility peak.' },
-          { name: 'Seated Hold Finish Strong', sets: '4×60s', desc: 'Final hold.' },
-        ],
-        note: 'Strength & isometric peak.',
-      },
-      {
-        id: 'b25', type: 'TC', title: 'Tai Chi Deep Flow',
-        struct: "2' warmup · 5×(60''/5') · 1' cool",
-        exercises: [
-          { name: 'Wave Hands', sets: '8 reps', desc: 'Full wave sequence.' },
-          { name: 'Diagonal Flying', sets: '8 each side', desc: 'Balance & coordination.' },
-          { name: 'Shoulder Rolls', sets: '10 each direction', desc: 'Joint release.' },
-          { name: 'Seated Meditation', sets: '5 min', desc: 'Deep closing flow.' },
-        ],
-        note: 'Tai Chi deep mobility — ultimate session.',
-      },
-      {
-        id: 'b26', type: 'BW', title: 'Army — Grand Finale',
-        struct: "2' warmup · 5 sets · 1' cool",
-        exercises: [
-          { name: 'Decline Push-ups (Feet on Chair)', sets: '5×15', desc: 'Peak push.' },
-          { name: 'Seated V-ups', sets: '5×20', desc: 'Peak core.' },
-          { name: 'Chair Dips with Knee Tuck', sets: '5×15', desc: 'Peak dips.' },
-          { name: 'Seated Hold Finish Strong', sets: '5×60s', desc: '🎯 28-Day Army COMPLETE!' },
-        ],
-        note: '28-Day Military Chair Challenge — COMPLETE!',
-      },
+      ac(1, 'Chair Push-ups', '3 sets × 12–15 reps', 'Hands on the chair seat. Body straight. Lower and press up.', 'Week 1 — no gym, chair only.'),
+      ac(2, 'Sit to Stand Squats', '3 sets × 15 reps', 'Stand up from the chair, then sit back down with control.', 'Touch the seat lightly. Do not collapse down.'),
+      ac(3, 'Chair Plank', '3 sets × 30 sec', 'Hands on the chair seat. Hold a straight plank.', 'Brace the core. Do not sag at the hips.'),
+      ac(4, 'Alternating Leg Extensions', '3 sets × 15 reps each leg', 'Sit tall and extend one leg straight out at a time.', 'Pause briefly at the top of each rep.'),
+      ac(5, 'Chair Dips', '3 sets × 12–15 reps', 'Hands on the front edge of the chair. Dip down and press up.', 'Keep the chair stable against a wall if needed.'),
+      ac(6, 'Seated Knee Raises', '3 sets × 15 reps', 'Sit on the chair and lift one knee toward the chest at a time.', 'Move from the core, not by leaning back hard.'),
+      ac(7, 'Russian Twists (Seated)', '3 sets × 20 reps', 'Sit at the edge, lean back slightly, and twist the torso side to side.', 'Hands together. Rotate the ribs, not just the arms.'),
+    ],
+  },
+  {
+    program: 'ac',
+    poster: 'ac',
+    label: 'Week 2 — Strength',
+    focus: 'Harder pressing, legs, and stability',
+    workouts: [
+      ac(8, 'Wide Push-ups (Hands on Chair)', '3 sets × 12–15 reps', 'Incline push-up with a wider hand placement on the chair.', 'Week 2 — keep the same 3-set structure.'),
+      ac(9, 'Seated Leg Raises', '3 sets × 15 reps', 'Sit tall and lift both straight legs together.', 'Lower slowly. Do not drop the feet.'),
+      ac(10, 'Chair Pike Push-ups', '3 sets × 10–12 reps', 'Feet on the chair, hands on the floor, hips high. Press the head toward the floor.', 'Make a V-shape. Bend the elbows, then press up.'),
+      ac(11, 'Single Leg Sit to Stand', '3 sets × 10 reps each leg', 'Stand up from the chair on one leg, then sit back down.', 'Use the chair for balance only if needed.'),
+      ac(12, 'Seated Oblique Crunch', '3 sets × 15 reps each side', 'Hands behind the head. Bring elbow toward the opposite knee.', 'Crunch with control. Do not yank the neck.'),
+      ac(13, 'Tricep Dips (Legs Extended)', '3 sets × 12–15 reps', 'Chair dips with both legs straight out in front.', 'The longer lever makes the dip harder.'),
+      ac(14, 'Chair Plank Shoulder Taps', '3 sets × 20 taps', 'Plank with hands on the chair. Tap the opposite shoulder.', 'Keep the hips still while you tap.'),
+    ],
+  },
+  {
+    program: 'ac',
+    poster: 'ac',
+    label: 'Week 3 — Conditioning',
+    focus: 'Cardio, core, and endurance',
+    workouts: [
+      ac(15, 'Incline Push-ups (Hands on Chair)', '3 sets × 15 reps', 'Hands on the chair seat. Perform incline push-ups.', 'Week 3 — same chair, higher volume.'),
+      ac(16, 'Seated Marches', '3 sets × 20 reps', 'Sit on the chair and march, driving the knees up alternately.', 'Keep a steady cadence.'),
+      ac(17, 'Chair Mountain Climbers', '3 sets × 20 reps', 'Hands on the chair in a plank. Drive the knees toward the chest.', 'Stay on the balls of the feet.'),
+      ac(18, 'Seated Front Kicks', '3 sets × 15 reps each leg', 'Sit tall and kick one leg straight forward.', 'Kick with control, then switch legs.'),
+      ac(19, 'Seated Bicycle Crunch', '3 sets × 20 reps', 'Sit on the chair edge. Pedal the legs and twist the torso.', 'Opposite elbow toward opposite knee.'),
+      ac(20, 'Chair Dips (Hold & Pulse)', '3 sets × 15 reps', 'Dip down, hold the bottom, then make small pulses.', 'Stay in the working range. Do not lock out early.'),
+      ac(21, 'Seated Twist & Reach', '3 sets × 15 reps each side', 'Sit tall, twist the torso, and reach one arm across.', 'Reach past the opposite side, then return.'),
+    ],
+  },
+  {
+    program: 'ac',
+    poster: 'ac',
+    label: 'Week 4 — Finisher',
+    focus: 'Advanced strength and the final hold',
+    workouts: [
+      ac(22, 'Decline Push-ups (Feet on Chair)', '3 sets × 12–15 reps', 'Hands on the floor, feet elevated on the chair.', 'Week 4 — the hardest pressing variation.'),
+      ac(23, 'Squat Hold (Sit & Hold)', '3 sets × 30–45 sec', 'Hover just above the chair seat and hold.', 'Do not sit down until the hold is done.'),
+      ac(24, 'Chair Plank Side to Side', '3 sets × 20 reps', 'Plank with hands on the chair. Step the feet out and in.', 'Move the feet, keep the arms quiet.'),
+      ac(25, 'Seated Leg Circles', '3 sets × 10 circles each leg', 'Sit tall, extend one leg, and draw slow circles.', 'Complete the circle before switching legs.'),
+      ac(26, 'Seated V-ups', '3 sets × 15 reps', 'Sit on the edge, lean back, and bring knees and chest together.', 'Reach toward the shins as you fold.'),
+      ac(27, 'Chair Dips with Knee Tuck', '3 sets × 12–15 reps', 'Dip, then tuck one knee toward the chest at the top.', 'Alternate knees if that keeps the rhythm cleaner.'),
+      ac(28, 'Seated Hold Finish Strong', '3 sets × 45–60 sec', 'Sit at the edge. Hold both legs and arms out off the floor.', 'Finish the 28-day military chair challenge here.'),
     ],
   },
 ]
+
+export function getBodySession(program, ordinal) {
+  const list = bodyPhases.filter((phase) => phase.program === program).flatMap((phase) => phase.workouts)
+  if (!list.length) return null
+  const cycle = Math.floor((ordinal - 1) / list.length) + 1
+  const base = list[(ordinal - 1) % list.length]
+  const struct = densify(base.struct, cycle)
+  const exercise = base.exercises[0]
+  return {
+    ...base,
+    id: cycle === 1 ? base.id : `${program}-c${cycle}-${base.day}`,
+    cycle,
+    struct,
+    exercises: [{ ...exercise, sets: densify(exercise.sets, cycle) }],
+    note: cycle === 1
+      ? base.note
+      : `Cycle ${cycle}. Same movement, a little more volume. Keep the form.`,
+  }
+}
+
+export function isFlowSession(session) {
+  return /flow/i.test(session?.title || '') || /full round/i.test(session?.struct || '')
+}
+
+function weekWorkoutsFor(session) {
+  if (!session) return []
+  const phases = bodyPhases.filter((phase) => phase.program === session.program)
+  for (const phase of phases) {
+    if (phase.workouts.some((workout) => workout.day === session.day)) {
+      return phase.workouts
+    }
+  }
+  return []
+}
+
+function parseSetCount(text) {
+  const match = String(text || '').match(/(\d+)\s*sets/i)
+  return match ? Number(match[1]) : 0
+}
+
+function stationFrom(workout, round, cycle, extra = {}) {
+  const exercise = workout.exercises?.[0] || { name: workout.title, sets: workout.struct, desc: '' }
+  return {
+    round,
+    name: exercise.name || workout.title,
+    sets: densify(exercise.sets || workout.struct, cycle),
+    desc: exercise.desc || '',
+    program: workout.program,
+    day: workout.day,
+    note: workout.note || '',
+    ...extra,
+  }
+}
+
+export function hiitStationsFor(session) {
+  if (!session) return []
+  const cycle = session.cycle || 1
+
+  if (isFlowSession(session)) {
+    const week = weekWorkoutsFor(session).filter((workout) => !isFlowSession(workout))
+    return week.slice(0, 6).map((workout, index) => stationFrom(workout, index + 1, cycle, {
+      label: workout.title,
+    }))
+  }
+
+  const setCount = parseSetCount(session.struct)
+  return Array.from({ length: 6 }, (_, index) => {
+    const setNum = setCount >= 2 ? Math.min(setCount, Math.floor(index / Math.max(1, Math.round(6 / setCount))) + 1) : 0
+    return stationFrom(session, index + 1, cycle, {
+      label: session.title,
+      setLabel: setNum
+        ? `Set ${setNum} of ${setCount}`
+        : `Round ${index + 1} of 6`,
+    })
+  })
+}
