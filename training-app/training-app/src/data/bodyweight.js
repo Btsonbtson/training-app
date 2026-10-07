@@ -1,6 +1,6 @@
 export const bodyPhases = [
   {
-    label: 'Week 1 — Foundation · ~40% ένταση → πλήρες πρόγραμμα',
+    label: 'Week 1 — Foundation (Tai Chi) + Army Days 1–7',
     workouts: [
       {
         id: 'b1', type: 'TC', title: 'Tai Chi — Week 1 Foundation',
@@ -19,11 +19,11 @@ export const bodyPhases = [
         id: 'b2', type: 'BW', title: 'Army Chair — Days 1–3',
         struct: "2' warmup · 3 sets · 1' cool",
         exercises: [
-          { name: 'Chair Push-ups', sets: '3 sets × 6–8 reps', desc: 'Hands on chair edge. Body straight. Lower slowly.' },
-          { name: 'Sit to Stand Squats', sets: '3 sets × 8–10 reps', desc: 'Stand fully from seated. Control the descent.' },
-          { name: 'Chair Plank', sets: '3 sets × 8–12 sec', desc: 'Hands on seat. Body straight as a plank.' },
+          { name: 'Chair Push-ups', sets: '3 sets × 12–15 reps', desc: 'Hands on chair edge. Body straight. Lower slowly.' },
+          { name: 'Sit to Stand Squats', sets: '3 sets × 15 reps', desc: 'Stand fully from seated. Control the descent.' },
+          { name: 'Chair Plank', sets: '3 sets × 30 sec', desc: 'Hands on seat. Body straight as a plank.' },
         ],
-        note: 'Days 1–3: ξεκίνα χαμηλά (~40%). Στόχος πλήρες: 12–15 reps / plank 30″ μέχρι W4–Peak.',
+        note: 'Days 1–3: foundation strength base.',
       },
       {
         id: 'b3', type: 'TC', title: 'Tai Chi — Week 1 Days 4–7',
@@ -40,17 +40,17 @@ export const bodyPhases = [
         id: 'b4', type: 'BW', title: 'Army Chair — Days 4–7',
         struct: "2' warmup · 3 sets · 1' cool",
         exercises: [
-          { name: 'Alternating Leg Extensions', sets: '3 sets × 8–10 reps each leg', desc: 'Extend each leg fully, hold 1 sec, lower.' },
-          { name: 'Chair Dips', sets: '3 sets × 6–8 reps', desc: 'Hands on chair edge, dip down, push up.' },
-          { name: 'Seated Knee Raises', sets: '3 sets × 8–10 reps', desc: 'Alternate knee raises, core tight.' },
-          { name: 'Russian Twists (Seated)', sets: '3 sets × 10–12 reps', desc: 'Hands clasped, rotate torso L/R.' },
+          { name: 'Alternating Leg Extensions', sets: '3 sets × 15 reps each leg', desc: 'Extend each leg fully, hold 1 sec, lower.' },
+          { name: 'Chair Dips', sets: '3 sets × 12–15 reps', desc: 'Hands on chair edge, dip down, push up.' },
+          { name: 'Seated Knee Raises', sets: '3 sets × 15 reps', desc: 'Alternate knee raises, core tight.' },
+          { name: 'Russian Twists (Seated)', sets: '3 sets × 20 reps', desc: 'Hands clasped, rotate torso L/R.' },
         ],
-        note: 'Days 4–7: ~40% ένταση. Πλήρες αργότερα: 15 / 12–15 / 15 / 20 reps.',
+        note: 'Days 4–7: legs, endurance, core.',
       },
     ],
   },
   {
-    label: 'Week 2 — Strength · ~60% ένταση → πλήρες πρόγραμμα',
+    label: 'Week 2 — Strength (Tai Chi) + Army Days 8–14',
     workouts: [
       {
         id: 'b5', type: 'TC', title: 'Tai Chi — Week 2 Strength',
@@ -67,11 +67,11 @@ export const bodyPhases = [
         id: 'b6', type: 'BW', title: 'Army Chair — Days 8–10',
         struct: "2' warmup · 3 sets · 1' cool",
         exercises: [
-          { name: 'Wide Push-ups (Hands on Chair)', sets: '3 sets × 8–10 reps', desc: 'Wider grip, targets chest & back.' },
-          { name: 'Seated Leg Raises', sets: '3 sets × 10–12 reps', desc: 'Lift straight leg, hold, lower slowly.' },
-          { name: 'Chair Pike Push-ups', sets: '3 sets × 6–8 reps', desc: 'Hips high V-shape, press head toward floor.' },
+          { name: 'Wide Push-ups (Hands on Chair)', sets: '3 sets × 12–15 reps', desc: 'Wider grip, targets chest & back.' },
+          { name: 'Seated Leg Raises', sets: '3 sets × 15 reps', desc: 'Lift straight leg, hold, lower slowly.' },
+          { name: 'Chair Pike Push-ups', sets: '3 sets × 10–12 reps', desc: 'Hips high V-shape, press head toward floor.' },
         ],
-        note: 'Days 8–10: ~60% ένταση. Πλήρες: 12–15 / 15 / 10–12 reps.',
+        note: 'Days 8–10: upper body strength push.',
       },
       {
         id: 'b7', type: 'TC', title: 'Tai Chi — Week 2 Days 12–14',
@@ -87,17 +87,17 @@ export const bodyPhases = [
         id: 'b8', type: 'BW', title: 'Army Chair — Days 11–14',
         struct: "2' warmup · 3 sets · 1' cool",
         exercises: [
-          { name: 'Single Leg Sit to Stand', sets: '3 sets × 5–6 reps each leg', desc: 'One foot off floor. Stand on single leg.' },
-          { name: 'Seated Oblique Crunch', sets: '3 sets × 8–10 reps each side', desc: 'Elbow to opposite knee, controlled crunch.' },
-          { name: 'Tricep Dips (Legs Extended)', sets: '3 sets × 8–10 reps', desc: 'Legs straight out. Deep dip with control.' },
-          { name: 'Chair Plank Shoulder Taps', sets: '3 sets × 10–12 taps', desc: 'Plank on chair. Tap opposite shoulder, no rotation.' },
+          { name: 'Single Leg Sit to Stand', sets: '3 sets × 10 reps each leg', desc: 'One foot off floor. Stand on single leg.' },
+          { name: 'Seated Oblique Crunch', sets: '3 sets × 15 reps each side', desc: 'Elbow to opposite knee, controlled crunch.' },
+          { name: 'Tricep Dips (Legs Extended)', sets: '3 sets × 12–15 reps', desc: 'Legs straight out. Deep dip with control.' },
+          { name: 'Chair Plank Shoulder Taps', sets: '3 sets × 20 taps', desc: 'Plank on chair. Tap opposite shoulder, no rotation.' },
         ],
-        note: 'Days 11–14: ~60% ένταση. Πλήρες: 10 / 15 / 12–15 / 20 taps.',
+        note: 'Days 11–14: legs, obliques, triceps, stability.',
       },
     ],
   },
   {
-    label: 'Week 3 — Balance · ~80% ένταση → πλήρες πρόγραμμα',
+    label: 'Week 3 — Balance (Tai Chi) + Army Days 15–21',
     workouts: [
       {
         id: 'b9', type: 'TC', title: 'Tai Chi — Week 3 Balance',
@@ -114,11 +114,11 @@ export const bodyPhases = [
         id: 'b10', type: 'BW', title: 'Army Chair — Days 15–17',
         struct: "2' warmup · 3 sets · 1' cool",
         exercises: [
-          { name: 'Incline Push-ups (Hands on Chair)', sets: '3 sets × 10–12 reps', desc: 'Hands elevated on chair. Targets upper chest.' },
-          { name: 'Seated Marches', sets: '3 sets × 14–16 reps', desc: 'March in place seated. Drive knees up alternately.' },
-          { name: 'Chair Mountain Climbers', sets: '3 sets × 14–16 reps', desc: 'Plank on chair. Drive knee to chest alternately.' },
+          { name: 'Incline Push-ups (Hands on Chair)', sets: '3 sets × 15 reps', desc: 'Hands elevated on chair. Targets upper chest.' },
+          { name: 'Seated Marches', sets: '3 sets × 20 reps', desc: 'March in place seated. Drive knees up alternately.' },
+          { name: 'Chair Mountain Climbers', sets: '3 sets × 20 reps', desc: 'Plank on chair. Drive knee to chest alternately.' },
         ],
-        note: 'Days 15–17: ~80% ένταση. Πλήρες: 15 / 20 / 20 reps.',
+        note: 'Days 15–17: cardio burst + upper push.',
       },
       {
         id: 'b11', type: 'TC', title: 'Tai Chi — Week 3 Days 18–21',
@@ -134,17 +134,17 @@ export const bodyPhases = [
         id: 'b12', type: 'BW', title: 'Army Chair — Days 18–21',
         struct: "2' warmup · 3 sets · 1' cool",
         exercises: [
-          { name: 'Seated Front Kicks', sets: '3 sets × 10–12 reps each leg', desc: 'Kick leg forward powerfully from seated.' },
-          { name: 'Seated Bicycle Crunch', sets: '3 sets × 14–16 reps', desc: 'Alternate elbow to opposite knee.' },
-          { name: 'Chair Dips (Hold & Pulse)', sets: '3 sets × 10–12 reps', desc: 'Dip down, hold at bottom, small pulses.' },
-          { name: 'Seated Twist & Reach', sets: '3 sets × 10–12 reps each side', desc: 'Twist torso + reach arm high opposite side.' },
+          { name: 'Seated Front Kicks', sets: '3 sets × 15 reps each leg', desc: 'Kick leg forward powerfully from seated.' },
+          { name: 'Seated Bicycle Crunch', sets: '3 sets × 20 reps', desc: 'Alternate elbow to opposite knee.' },
+          { name: 'Chair Dips (Hold & Pulse)', sets: '3 sets × 15 reps', desc: 'Dip down, hold at bottom, small pulses.' },
+          { name: 'Seated Twist & Reach', sets: '3 sets × 15 reps each side', desc: 'Twist torso + reach arm high opposite side.' },
         ],
-        note: 'Days 18–21: ~80% ένταση. Πλήρες: 15 / 20 / 15 / 15 reps.',
+        note: 'Days 18–21: kicks, core, endurance.',
       },
     ],
   },
   {
-    label: 'Week 4 — Mastery · πλήρες 28-Day πρόγραμμα',
+    label: 'Week 4 — Mastery (Tai Chi) + Army Days 22–28',
     workouts: [
       {
         id: 'b13', type: 'TC', title: 'Tai Chi — Week 4 Mastery',
@@ -165,7 +165,7 @@ export const bodyPhases = [
           { name: 'Squat Hold (Sit & Hold)', sets: '3 sets × 30–45 sec', desc: 'Hover just above chair seat. Isometric burn.' },
           { name: 'Chair Plank Side to Side', sets: '3 sets × 20 reps', desc: 'From plank position, step feet side to side.' },
         ],
-        note: 'Days 22–24: πλήρη νούμερα προγράμματος — squat hold 30–45″.',
+        note: 'Days 22–24: advanced strength + isometric.',
       },
       {
         id: 'b15', type: 'TC', title: 'Tai Chi — Week 4 Days 25–28',
@@ -186,12 +186,12 @@ export const bodyPhases = [
           { name: 'Chair Dips with Knee Tuck', sets: '3 sets × 12–15 reps', desc: 'Dip + tuck one knee up at bottom.' },
           { name: 'Seated Hold Finish Strong', sets: '3 sets × 45–60 sec', desc: 'Final isometric hold — Finish Strong!' },
         ],
-        note: 'Days 25–28: πλήρες πρόγραμμα — seated hold 45–60″. 28-Day Challenge COMPLETE!',
+        note: 'Days 25–28 Finale — 28-Day Challenge COMPLETE!',
       },
     ],
   },
   {
-    label: 'Φάση 5 — Peak · πλήρες πρόγραμμα (στόχος μετά W1–W4)',
+    label: 'Φάση 5 — Peak · Πλήρη Προγράμματα',
     workouts: [
       {
         id: 'b17', type: 'TC', title: 'Tai Chi Peak — Week 1+2 Flow',

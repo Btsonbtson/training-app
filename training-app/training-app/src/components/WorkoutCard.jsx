@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { IsoTimer } from './IsoTimer'
 
 const BADGE_STYLE = {
   RI:  { background: 'var(--accent-light)', color: 'var(--accent)' },
@@ -7,6 +8,7 @@ const BADGE_STYLE = {
   RE:  { background: 'var(--purple-light)', color: 'var(--purple)' },
   BW:  { background: 'var(--green-light)', color: 'var(--green)' },
   TC:  { background: '#e0f2fe', color: '#0369a1' },
+  ISO: { background: '#ecfeff', color: '#0e7490' },
 }
 
 function ChevronIcon({ open }) {
@@ -128,12 +130,77 @@ export function BodyweightCard({ session, number, stars, note, done, onStar, onS
   )
 }
 
+// ── Isometric Card ────────────────────────────────────────
+
+export function IsoCard({ session, number, stars, note, done, onStar, onSave }) {
+  const [open, setOpen] = useState(false)
+  const [localNote, setLocalNote] = useState(note || '')
+
+  return (
+    <div style={cardStyle}>
+      <div style={hdrStyle} onClick={() => setOpen(o => !o)}>
+        <Num value={number} done={done} type="i" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={titleStyle}>{session.title}</div>
+          <div style={subStyle}>{session.struct}</div>
+        </div>
+        <ChevronIcon open={open} />
+      </div>
+
+      {open && (
+        <div style={bodyStyle}>
+          <Badge type="ISO" label="Isometric · Progressive" />
+
+          <div style={{ ...snoteStyle, marginTop: 8 }}>{session.struct}</div>
+
+          <div style={{ marginTop: 10 }}>
+            {session.exercises.map((ex, i) => (
+              <div key={ex.name} style={exCardStyle}>
+                <div style={exHdrStyle}>
+                  <span style={exNumStyle}>{i + 1}.</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={exNameStyle}>{ex.name}</div>
+                    <div style={exSetsStyle}>
+                      Αυτή η εβδομάδα: {ex.setsLabel}
+                      <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
+                        {' '}· πλήρες: {ex.fullLabel}
+                      </span>
+                    </div>
+                    <div style={exDescStyle}>{ex.desc}</div>
+                  </div>
+                </div>
+                {ex.image && (
+                  <div style={{ ...exFigStyle, background: '#000', padding: '8px 0' }}>
+                    <img
+                      src={ex.image}
+                      alt={ex.name}
+                      style={{ maxHeight: 180, width: 'auto', objectFit: 'contain' }}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <IsoTimer workout={session} />
+
+          <div style={{ ...snoteStyle, marginTop: 8 }}>💡 {session.note}</div>
+
+          <Feedback stars={stars} note={localNote} onStar={onStar}
+            onNoteChange={setLocalNote} onSave={() => onSave(localNote)} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Shared sub-components ─────────────────────────────────
 
 function Num({ value, done, type }) {
   const colors = {
     t: { bg: 'var(--accent-light)', color: 'var(--accent)' },
     b: { bg: 'var(--green-light)', color: 'var(--green)' },
+    i: { bg: '#ecfeff', color: '#0e7490' },
   }
   const col = done ? { bg: 'var(--green-light)', color: 'var(--green)' } : colors[type]
   return (
