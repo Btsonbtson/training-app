@@ -136,12 +136,12 @@ export default function App() {
       {tab === 'i' && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600 }}>Isometric · από το μηδέν</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 600 }}>Isometric · 12 εβδομάδες</h2>
             <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{doneI} / {totalI}</span>
           </div>
           <ProgressBar done={doneI} total={totalI} color="#0e7490" />
           <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 8, lineHeight: 1.45 }}>
-            Ίδιες φωτογραφίες. Μόνο διάρκειες/sets ανεβαίνουν: W1 ~25% → W4 πλήρες (3×60 · 3×80 · 3×90 · 3×90 · 2×30).
+            Ίδιες φωτογραφίες. Διάρκειες ανεβαίνουν προοδευτικά: W1 από το μηδέν → W12 πλήρες (3×60 · 3×80 · 3×90 · 3×90 · 2×30).
           </p>
           {isoPhases.map(ph => (
             <div key={ph.label}>

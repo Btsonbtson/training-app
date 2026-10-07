@@ -21,7 +21,41 @@ export const ISO_IMAGES = {
   'Leg Raise Hold': legRaiseHold,
 }
 
-function hold(name, sets, holdSec, restSec, cue) {
+const CUES = {
+  'Lunge Hold': 'Μπροστά πόδι 90°. Πίσω γόνατο σχεδόν αγγίζει. Κράτα σταθερά.',
+  'Squat Hold': 'Μηροί παράλληλα όσο γίνεται. Χέρια μπροστά. Σταθερό κάθισμα.',
+  'Elbow Plank': 'Αγκώνες κάτω από ώμους. Σώμα σε ευθεία γραμμή.',
+  'Wall Sit': 'Πλάτη στον τοίχο. Γόνατα ~90°. Χέρια μπροστά.',
+  'Leg Raise Hold': 'Πλάτη στο πάτωμα. Πόδια ίσια, λίγο πάνω από το έδαφος.',
+}
+
+/** W1 (από το μηδέν) → W12 (πλήρες πρόγραμμα στις φωτογραφίες). */
+const WEEK_HOLD_SEC = {
+  'Lunge Hold':      [15, 19, 23, 27, 31, 35, 40, 44, 48, 52, 56, 60],
+  'Squat Hold':      [20, 25, 31, 36, 42, 47, 53, 58, 64, 69, 75, 80],
+  'Elbow Plank':     [20, 26, 33, 39, 45, 52, 58, 65, 71, 78, 84, 90],
+  'Wall Sit':        [20, 26, 33, 39, 45, 52, 58, 65, 71, 78, 84, 90],
+  'Leg Raise Hold':  [ 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30],
+}
+
+const EXERCISE_ORDER = [
+  'Lunge Hold',
+  'Squat Hold',
+  'Elbow Plank',
+  'Wall Sit',
+  'Leg Raise Hold',
+]
+
+const TOTAL_WEEKS = 12
+
+function lerpRest(holdSec, weekIndex) {
+  // Rest grows gently with hold length; slightly shorter early on
+  const base = Math.round(holdSec * 0.75)
+  const floor = weekIndex < 3 ? 40 : 45
+  return Math.max(floor, Math.min(90, base))
+}
+
+function hold(name, sets, holdSec, restSec) {
   const full = ISO_FULL[name]
   return {
     name,
@@ -30,104 +64,69 @@ function hold(name, sets, holdSec, restSec, cue) {
     restSec,
     setsLabel: `${sets} × ${holdSec} sec`,
     fullLabel: `${full.sets} × ${full.holdSec} sec`,
-    desc: cue,
+    desc: CUES[name],
     image: ISO_IMAGES[name],
   }
 }
 
-function week(id, title, pctLabel, note, exercises) {
+function weekWorkout(weekNum) {
+  const i = weekNum - 1
+  const pct = Math.round((weekNum / TOTAL_WEEKS) * 100)
+  const exercises = EXERCISE_ORDER.map((name) => {
+    const full = ISO_FULL[name]
+    const holdSec = WEEK_HOLD_SEC[name][i]
+    return hold(name, full.sets, holdSec, lerpRest(holdSec, i))
+  })
+
   const totalHold = exercises.reduce((s, e) => s + e.sets * e.holdSec, 0)
   const totalRest = exercises.reduce((s, e) => s + Math.max(0, e.sets - 1) * e.restSec, 0)
   const transitions = Math.max(0, exercises.length - 1) * 20
   const approxMin = Math.round((totalHold + totalRest + transitions) / 60)
+
+  const isFirst = weekNum === 1
+  const isFull = weekNum === TOTAL_WEEKS
+
+  let note
+  if (isFirst) {
+    note = 'Ξεκίνα εδώ από το μηδέν. Στόχος φόρμας. Πλήρες πρόγραμμα στο Week 12: 3×60 / 3×80 / 3×90 / 3×90 / 2×30.'
+  } else if (isFull) {
+    note = 'Πλήρες πρόγραμμα — ίδια νούμερα με τις φωτογραφίες: 3×60 · 3×80 · 3×90 · 3×90 · 2×30.'
+  } else {
+    note = `Εβδομάδα ${weekNum}/12 (~${pct}%). Ίδιες ασκήσεις — μόνο η διάρκεια ανεβαίνει προς το πλήρες.`
+  }
+
   return {
-    id,
+    id: `iso${weekNum}`,
     type: 'ISO',
-    title,
-    struct: `${pctLabel} · ~${approxMin}' · rest μεταξύ sets`,
+    title: isFull
+      ? `Isometric — Week ${weekNum} · Πλήρες`
+      : `Isometric — Week ${weekNum}`,
+    struct: `~${pct}% ένταση · ~${approxMin}' · rest μεταξύ sets`,
     note,
+    week: weekNum,
     exercises,
   }
 }
 
 /**
- * Προοδευτική κλίμακα από το μηδέν → πλήρες πρόγραμμα στις φωτογραφίες.
- * W1 ~25% · W2 ~50% · W3 ~75% · W4 100%
+ * 12 εβδομάδες προοδευτικής αύξησης διάρκειας:
+ * W1 εισαγωγικό → W12 πλήρες πρόγραμμα (φωτογραφίες).
  */
-export const isoPhases = [
-  {
-    label: 'Week 1 — Από το μηδέν (~25%)',
-    workouts: [
-      week(
-        'iso1',
-        'Isometric — Week 1',
-        '~25% ένταση',
-        'Ξεκίνα εδώ. Στόχος φόρμας, όχι χρόνου. Πλήρες: 3×60 / 3×80 / 3×90 / 3×90 / 2×30.',
-        [
-          hold('Lunge Hold', 3, 15, 45, 'Μπροστά πόδι 90°. Πίσω γόνατο σχεδόν αγγίζει. Κράτα σταθερά.'),
-          hold('Squat Hold', 3, 20, 50, 'Μηροί παράλληλα όσο γίνεται. Χέρια μπροστά. Σταθερό κάθισμα.'),
-          hold('Elbow Plank', 3, 25, 50, 'Αγκώνες κάτω από ώμους. Σώμα σε ευθεία γραμμή.'),
-          hold('Wall Sit', 3, 25, 50, 'Πλάτη στον τοίχο. Γόνατα ~90°. Χέρια μπροστά.'),
-          hold('Leg Raise Hold', 2, 8, 40, 'Πλάτη στο πάτωμα. Πόδια ίσια, λίγο πάνω από το έδαφος.'),
-        ],
-      ),
-    ],
-  },
-  {
-    label: 'Week 2 — Build (~50%)',
-    workouts: [
-      week(
-        'iso2',
-        'Isometric — Week 2',
-        '~50% ένταση',
-        'Διπλάσια διάρκεια από W1. Ίδια ασκήσεις — μόνο ο χρόνος ανεβαίνει.',
-        [
-          hold('Lunge Hold', 3, 30, 50, 'Μπροστά πόδι 90°. Πίσω γόνατο σχεδόν αγγίζει. Κράτα σταθερά.'),
-          hold('Squat Hold', 3, 40, 60, 'Μηροί παράλληλα όσο γίνεται. Χέρια μπροστά. Σταθερό κάθισμα.'),
-          hold('Elbow Plank', 3, 45, 60, 'Αγκώνες κάτω από ώμους. Σώμα σε ευθεία γραμμή.'),
-          hold('Wall Sit', 3, 45, 60, 'Πλάτη στον τοίχο. Γόνατα ~90°. Χέρια μπροστά.'),
-          hold('Leg Raise Hold', 2, 15, 45, 'Πλάτη στο πάτωμα. Πόδια ίσια, λίγο πάνω από το έδαφος.'),
-        ],
-      ),
-    ],
-  },
-  {
-    label: 'Week 3 — Push (~75%)',
-    workouts: [
-      week(
-        'iso3',
-        'Isometric — Week 3',
-        '~75% ένταση',
-        'Κοντά στο πλήρες. Αν σπάει η φόρμα, μείνε στα νούμερα της W2 και ξαναδοκίμασε.',
-        [
-          hold('Lunge Hold', 3, 45, 55, 'Μπροστά πόδι 90°. Πίσω γόνατο σχεδόν αγγίζει. Κράτα σταθερά.'),
-          hold('Squat Hold', 3, 60, 70, 'Μηροί παράλληλα όσο γίνεται. Χέρια μπροστά. Σταθερό κάθισμα.'),
-          hold('Elbow Plank', 3, 70, 75, 'Αγκώνες κάτω από ώμους. Σώμα σε ευθεία γραμμή.'),
-          hold('Wall Sit', 3, 70, 75, 'Πλάτη στον τοίχο. Γόνατα ~90°. Χέρια μπροστά.'),
-          hold('Leg Raise Hold', 2, 22, 45, 'Πλάτη στο πάτωμα. Πόδια ίσια, λίγο πάνω από το έδαφος.'),
-        ],
-      ),
-    ],
-  },
-  {
-    label: 'Week 4 — Πλήρες πρόγραμμα (100%)',
-    workouts: [
-      week(
-        'iso4',
-        'Isometric — Week 4 · Full',
-        'πλήρες πρόγραμμα',
-        'Ίδια νούμερα με τις φωτογραφίες: 3×60 · 3×80 · 3×90 · 3×90 · 2×30.',
-        [
-          hold('Lunge Hold', 3, 60, 60, 'Μπροστά πόδι 90°. Πίσω γόνατο σχεδόν αγγίζει. Κράτα σταθερά.'),
-          hold('Squat Hold', 3, 80, 75, 'Μηροί παράλληλα όσο γίνεται. Χέρια μπροστά. Σταθερό κάθισμα.'),
-          hold('Elbow Plank', 3, 90, 90, 'Αγκώνες κάτω από ώμους. Σώμα σε ευθεία γραμμή.'),
-          hold('Wall Sit', 3, 90, 90, 'Πλάτη στον τοίχο. Γόνατα ~90°. Χέρια μπροστά.'),
-          hold('Leg Raise Hold', 2, 30, 45, 'Πλάτη στο πάτωμα. Πόδια ίσια, λίγο πάνω από το έδαφος.'),
-        ],
-      ),
-    ],
-  },
-]
+export const isoPhases = Array.from({ length: TOTAL_WEEKS }, (_, idx) => {
+  const weekNum = idx + 1
+  const pct = Math.round((weekNum / TOTAL_WEEKS) * 100)
+  const label =
+    weekNum === 1
+      ? `Week 1 — Από το μηδέν (~${pct}%)`
+      : weekNum === TOTAL_WEEKS
+        ? `Week ${TOTAL_WEEKS} — Πλήρες πρόγραμμα (100%)`
+        : `Week ${weekNum} — Progressive (~${pct}%)`
+
+  return {
+    label,
+    workouts: [weekWorkout(weekNum)],
+  }
+})
 
 /** Φάσεις χρονομέτρου για μία προπόνηση — hold/rest ανά set με βάση τα progressive secs. */
 export function buildIsoPhases(workout) {
